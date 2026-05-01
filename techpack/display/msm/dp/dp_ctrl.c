@@ -798,10 +798,8 @@ static int dp_ctrl_link_setup(struct dp_ctrl_private *ctrl, bool shallow)
 			break;
 		}
 
-		if (rc != -EAGAIN) {
+		if (rc != -EAGAIN)
 			dp_ctrl_link_rate_down_shift(ctrl);
-			ctrl->panel->init(ctrl->panel);
-		}
 
 		dp_ctrl_configure_source_link_params(ctrl, false);
 		dp_ctrl_disable_link_clock(ctrl);

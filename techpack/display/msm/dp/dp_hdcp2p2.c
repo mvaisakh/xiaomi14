@@ -595,10 +595,10 @@ static void dp_hdcp2p2_link_check(struct dp_hdcp2p2_ctrl *ctrl)
 
 	if (ctrl->sink_rx_status & ctrl->abort_mask) {
 		if (ctrl->sink_rx_status & BIT(3))
-			DP_WARN("reauth_req set by sink\n");
+			DP_ERR("reauth_req set by sink\n");
 
 		if (ctrl->sink_rx_status & BIT(4))
-			DP_WARN("link failure reported by sink\n");
+			DP_ERR("link failure reported by sink\n");
 
 		ctrl->sink_rx_status = 0;
 		ctrl->rx_status = 0;

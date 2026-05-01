@@ -937,15 +937,6 @@ int sde_rsc_client_state_update(struct sde_rsc_client *caller_client,
 		__builtin_return_address(0), rsc->current_state,
 		caller_client->name, state);
 
-	if ((state == SDE_RSC_VID_STATE) && (rsc->version >= SDE_RSC_REV_3))
-		state = SDE_RSC_CLK_STATE;
-
-	/* hw init is required after hibernation */
-	if (rsc->need_hwinit && state != SDE_RSC_IDLE_STATE) {
-		sde_rsc_hw_init(rsc);
-		rsc->need_hwinit = false;
-	}
-
 	/**
 	 * This can only happen if splash is active or qsync is enabled.
 	 * In both cases timers need to be updated for when a transition to
@@ -957,6 +948,14 @@ int sde_rsc_client_state_update(struct sde_rsc_client *caller_client,
 			(caller_client == rsc->primary_client))
 		sde_rsc_timer_calculate(rsc, config, state);
 
+	if ((state == SDE_RSC_VID_STATE) && (rsc->version >= SDE_RSC_REV_3))
+		state = SDE_RSC_CLK_STATE;
+
+	/* hw init is required after hibernation */
+	if (rsc->need_hwinit && state != SDE_RSC_IDLE_STATE) {
+		sde_rsc_hw_init(rsc);
+		rsc->need_hwinit = false;
+	}
 
 	caller_client->crtc_id = crtc_id;
 	caller_client->current_state = state;

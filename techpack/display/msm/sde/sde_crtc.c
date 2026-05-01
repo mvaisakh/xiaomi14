@@ -49,6 +49,10 @@
 #include "msm_drv.h"
 #include "sde_vm.h"
 
+#ifdef MI_DISPLAY_MODIFY
+#include "mi_sde_crtc.h"
+#endif
+
 #define SDE_PSTATES_MAX (SDE_STAGE_MAX * 4)
 #define SDE_MULTIRECT_PLANE_MAX (SDE_STAGE_MAX * 2)
 
@@ -976,7 +980,6 @@ static int _sde_crtc_set_roi_v1(struct drm_crtc_state *state,
 				roi_v1.num_rects);
 		return -EINVAL;
 	}
-
 	cstate->user_roi_list.roi_feature_flags = roi_v1.roi_feature_flags;
 	cstate->user_roi_list.num_rects = roi_v1.num_rects;
 	for (i = 0; i < roi_v1.num_rects; ++i) {
@@ -1000,6 +1003,17 @@ static int _sde_crtc_set_roi_v1(struct drm_crtc_state *state,
 				cstate->user_roi_list.roi[i].y1,
 				cstate->user_roi_list.roi[i].x2,
 				cstate->user_roi_list.roi[i].y2);
+		SDE_DEBUG("crtc%d: spr roi%d: spr roi (%d,%d) (%d,%d)\n",
+				DRMID(crtc), i,
+				cstate->user_roi_list.spr_roi[i].x1,
+				cstate->user_roi_list.spr_roi[i].y1,
+				cstate->user_roi_list.spr_roi[i].x2,
+				cstate->user_roi_list.spr_roi[i].y2);
+		SDE_EVT32_VERBOSE(DRMID(crtc),
+				cstate->user_roi_list.spr_roi[i].x1,
+				cstate->user_roi_list.spr_roi[i].y1,
+				cstate->user_roi_list.spr_roi[i].x2,
+				cstate->user_roi_list.spr_roi[i].y2);
 		SDE_DEBUG("crtc%d, roi_feature_flags %d: spr roi%d: spr roi (%d,%d) (%d,%d)\n",
 				DRMID(crtc), roi_v1.roi_feature_flags, i,
 				roi_v1.spr_roi[i].x1,
@@ -1077,13 +1091,12 @@ static int _sde_crtc_set_crtc_roi(struct drm_crtc *crtc,
 		/*
 		 * When enable spr 2D filter in PU, it require over fetch lines.
 		 * In this case, the roi size of connector and crtc are different.
-		 * But the spr_roi is the original roi with over fetch lines,
+		 * But the spr_roi is the original roi withou over fetch lines,
 		 * that should same with connector size.
 		 */
 		if (memcmp(&sde_conn_state->rois.roi, &crtc_state->user_roi_list.spr_roi,
 				sizeof(crtc_state->user_roi_list.spr_roi)) &&
-				(sde_conn_state->rois.num_rects !=
-				crtc_state->user_roi_list.num_rects)) {
+				(sde_conn_state->rois.num_rects != crtc_state->user_roi_list.num_rects)) {
 			SDE_ERROR("%s: crtc -> conn roi scaling unsupported\n",
 					sde_crtc->name);
 			return -EINVAL;
@@ -1607,9 +1620,8 @@ static void _sde_crtc_program_lm_output_roi(struct drm_crtc *crtc)
 
 		lm_roi = &cstate->lm_roi[lm_idx];
 		hw_lm = sde_crtc->mixers[lm_idx].hw_lm;
-		right_mixer = lm_idx % MAX_MIXERS_PER_LAYOUT;
-		if (sde_crtc->mixers_swapped)
-			right_mixer = !right_mixer;
+		if (!sde_crtc->mixers_swapped)
+			right_mixer = lm_idx % MAX_MIXERS_PER_LAYOUT;
 
 		if (lm_roi->w != hw_lm->cfg.out_width ||
 				lm_roi->h != hw_lm->cfg.out_height ||
@@ -4533,7 +4545,6 @@ static void sde_crtc_atomic_flush_common(struct drm_crtc *crtc,
 	 */
 	if (unlikely(!sde_crtc->num_mixers))
 		return;
-
 	SDE_ATRACE_BEGIN("sde_crtc_atomic_flush");
 
 	/*
@@ -4584,6 +4595,7 @@ static void sde_crtc_atomic_flush_common(struct drm_crtc *crtc,
 
 	/* Kickoff will be scheduled by outer layer */
 	SDE_ATRACE_END("sde_crtc_atomic_flush");
+
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0))
@@ -4889,9 +4901,13 @@ void sde_crtc_commit_kickoff(struct drm_crtc *crtc,
 	if (unlikely(!sde_crtc->num_mixers))
 		return;
 
+
 	SDE_ATRACE_BEGIN("crtc_commit");
 
 	idle_pc_state = sde_crtc_get_property(cstate, CRTC_PROP_IDLE_PC_STATE);
+#ifdef MI_DISPLAY_MODIFY
+	mi_sde_crtc_check_layer_flags(crtc);
+#endif
 
 	sde_crtc->kickoff_in_progress = true;
 	sde_crtc->handle_fence_error_bw_update = false;
@@ -4979,6 +4995,7 @@ void sde_crtc_commit_kickoff(struct drm_crtc *crtc,
 	}
 
 	SDE_ATRACE_END("crtc_commit");
+
 }
 
 /**
@@ -5224,9 +5241,6 @@ void sde_crtc_reset_sw_state(struct drm_crtc *crtc)
 	set_bit(SDE_CRTC_DIRTY_DIM_LAYERS, &sde_crtc->revalidate_mask);
 	if (cstate->num_ds_enabled)
 		set_bit(SDE_CRTC_DIRTY_DEST_SCALER, cstate->dirty);
-
-	/* wipe out cached CRTC ROI so PU is seen as dirty next update */
-	memset(&cstate->cached_user_roi_list, 0, sizeof(cstate->cached_user_roi_list));
 }
 
 static void sde_crtc_post_ipc(struct drm_crtc *crtc)
@@ -5427,7 +5441,6 @@ static void sde_crtc_disable(struct drm_crtc *crtc)
 			crtc->state->enable, sde_crtc->cached_encoder_mask);
 	sde_crtc->enabled = false;
 	sde_crtc->cached_encoder_mask = 0;
-	cstate->cached_cwb_enc_mask = 0;
 
 	/* Try to disable uidle */
 	sde_core_perf_crtc_update_uidle(crtc, false);
@@ -6645,8 +6658,6 @@ static void sde_crtc_install_perf_properties(struct sde_crtc *sde_crtc,
 static void sde_crtc_setup_capabilities_blob(struct sde_kms_info *info,
 		struct sde_mdss_cfg *catalog)
 {
-	enum sde_ddr_type ddr_type;
-
 	sde_kms_info_reset(info);
 
 	sde_kms_info_add_keyint(info, "hw_version", catalog->hw_rev);
@@ -6672,21 +6683,10 @@ static void sde_crtc_setup_capabilities_blob(struct sde_kms_info *info,
 				catalog->mdp[0].ubwc_swizzle);
 	}
 
-	ddr_type = of_fdt_get_ddrtype();
-	switch (ddr_type) {
-	case LP_DDR4:
+	if (of_fdt_get_ddrtype() == LP_DDR4_TYPE)
 		sde_kms_info_add_keystr(info, "DDR version", "DDR4");
-		break;
-	case LP_DDR5:
+	else
 		sde_kms_info_add_keystr(info, "DDR version", "DDR5");
-		break;
-	case LP_DDR5X:
-		sde_kms_info_add_keystr(info, "DDR version", "DDR5X");
-		break;
-	default:
-		SDE_INFO("ddr type : 0x%x not in list\n", ddr_type);
-		break;
-	}
 
 	if (sde_is_custom_client()) {
 		/* No support for SMART_DMA_V1 yet */

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -965,7 +965,7 @@ static void dp_mst_bridge_disable(struct drm_bridge *drm_bridge)
 
 static void dp_mst_bridge_post_disable(struct drm_bridge *drm_bridge)
 {
-	int rc = 0, conn = 0;
+	int rc = 0;
 	struct dp_mst_bridge *bridge;
 	struct dp_display *dp;
 	struct dp_mst_private *mst;
@@ -981,10 +981,8 @@ static void dp_mst_bridge_post_disable(struct drm_bridge *drm_bridge)
 		return;
 	}
 
-	conn = DP_MST_CONN_ID(bridge);
-
 	DP_MST_DEBUG_V("enter\n");
-	SDE_EVT32_EXTERNAL(SDE_EVTLOG_FUNC_ENTRY, conn);
+	SDE_EVT32_EXTERNAL(SDE_EVTLOG_FUNC_ENTRY, DP_MST_CONN_ID(bridge));
 
 	dp = bridge->display;
 	mst = dp->dp_mst_prv_info;
@@ -992,19 +990,19 @@ static void dp_mst_bridge_post_disable(struct drm_bridge *drm_bridge)
 	rc = dp->disable(dp, bridge->dp_panel);
 	if (rc)
 		DP_MST_INFO("bridge:%d conn:%d display disable failed, rc=%d\n",
-				bridge->id, conn, rc);
+				bridge->id, DP_MST_CONN_ID(bridge), rc);
 
 	rc = dp->unprepare(dp, bridge->dp_panel);
 	if (rc)
 		DP_MST_INFO("bridge:%d conn:%d display unprepare failed, rc=%d\n",
-				bridge->id, conn, rc);
+				bridge->id, DP_MST_CONN_ID(bridge), rc);
 
 	bridge->connector = NULL;
 	bridge->dp_panel =  NULL;
 
 	DP_MST_INFO("mst bridge:%d conn:%d post disable complete\n",
-			bridge->id, conn);
-	SDE_EVT32_EXTERNAL(SDE_EVTLOG_FUNC_EXIT, conn);
+			bridge->id, DP_MST_CONN_ID(bridge));
+	SDE_EVT32_EXTERNAL(SDE_EVTLOG_FUNC_EXIT, DP_MST_CONN_ID(bridge));
 }
 
 static void dp_mst_bridge_mode_set(struct drm_bridge *drm_bridge,
@@ -1311,10 +1309,6 @@ enum drm_mode_status dp_mst_connector_mode_valid(
 
 	vrefresh = drm_mode_vrefresh(mode);
 
-	/* As per spec, failsafe mode should always be present */
-	if ((mode->hdisplay == 640) && (mode->vdisplay == 480) && (mode->clock == 25175))
-		goto validate_mode;
-
 	if (dp_panel->mode_override && (mode->hdisplay != dp_panel->hdisplay ||
 			mode->vdisplay != dp_panel->vdisplay ||
 			vrefresh != dp_panel->vrefresh ||
@@ -1353,7 +1347,6 @@ enum drm_mode_status dp_mst_connector_mode_valid(
 		return MODE_BAD;
 	}
 
-validate_mode:
 	return dp_display->validate_mode(dp_display, dp_panel, mode, avail_res);
 }
 
@@ -1923,11 +1916,36 @@ dp_mst_add_fixed_connector(struct drm_dp_mst_topology_mgr *mgr,
 	return connector;
 }
 
+static int dp_mst_fixed_connector_set_info_blob(
+		struct drm_connector *connector,
+		void *info, void *display, struct msm_mode_info *mode_info)
+{
+	struct sde_connector *c_conn = to_sde_connector(connector);
+	struct dp_display *dp_display = display;
+	struct dp_mst_private *mst = dp_display->dp_mst_prv_info;
+	const char *display_type = NULL;
+	int i;
+
+	for (i = 0; i < MAX_DP_MST_DRM_BRIDGES; i++) {
+		if (mst->mst_bridge[i].base.encoder != c_conn->encoder)
+			continue;
+
+		dp_display->mst_get_fixed_topology_display_type(dp_display,
+			mst->mst_bridge[i].id, &display_type);
+		sde_kms_info_add_keystr(info, "display type", display_type);
+
+		break;
+	}
+
+	return 0;
+}
+
 static struct drm_connector *
 dp_mst_drm_fixed_connector_init(struct dp_display *dp_display,
 			struct drm_encoder *encoder)
 {
 	static const struct sde_connector_ops dp_mst_connector_ops = {
+		.set_info_blob = dp_mst_fixed_connector_set_info_blob,
 		.post_init  = dp_mst_connector_post_init,
 		.detect_ctx = dp_mst_fixed_connector_detect,
 		.get_modes  = dp_mst_connector_get_modes,

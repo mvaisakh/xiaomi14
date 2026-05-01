@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2014 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
@@ -25,6 +25,7 @@
 #include "msm_kms.h"
 #include "sde_trace.h"
 #include <drm/drm_atomic_uapi.h>
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0))
 #include <linux/dma-fence-chain.h>
 #endif
@@ -129,7 +130,8 @@ static inline bool _msm_seamless_for_conn(struct drm_connector *connector,
 			!old_conn_state->crtc->state->active_changed &&
 			old_conn_state->crtc->state->connectors_changed) {
 		if (old_conn_state->crtc == connector->state->crtc) {
-			if (enable && msm_is_private_mode_changed(
+			if ((enable || msm_is_mode_seamless_poms(msm_mode))
+				&& msm_is_private_mode_changed(
 				_msm_get_conn_state(old_conn_state->crtc->state)))
 				return false;
 			return true;
