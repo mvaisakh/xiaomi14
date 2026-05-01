@@ -11,6 +11,7 @@
 #include <linux/platform_device.h>
 #include "cam_presil_hw_access.h"
 #include "cam_trace.h"
+#include "cam_common_util.h"
 
 extern unsigned long long debug_mdl;
 extern unsigned int debug_type;
@@ -63,6 +64,10 @@ enum cam_debug_module_id {
 	CAM_DMA_FENCE,           /* bit 34 */
 	CAM_SENSOR_UTIL,         /* bit 35 */
 	CAM_SYNX,                /* bit 36 */
+	CAM_APERTURE = 60,       /* bit 60 */
+	MI_PARKLENS = 61,        /* bit 61 */
+	MI_DEBUG = 62,           /* bit 62 */
+	MI_PERF  = 63,           /* bit 63 */
 	CAM_DBG_MOD_MAX
 };
 
@@ -123,6 +128,10 @@ static const char __maybe_unused *cam_debug_mod_name[CAM_DBG_MOD_MAX] = {
 	[CAM_DMA_FENCE]   = "CAM-DMA-FENCE",
 	[CAM_SENSOR_UTIL] = "CAM-SENSOR-UTIL",
 	[CAM_SYNX]        = "CAM_SYNX",
+	[CAM_APERTURE]    = "MI-CAM-APERTURE",
+	[MI_PARKLENS]     = "MI-CAM-PARKLENS",
+	[MI_DEBUG]        = "MI-CAM-DEBUG",
+	[MI_PERF]         = "MI-CAM-PERF",
 };
 
 #define ___CAM_DBG_MOD_NAME(module_id)                                      \
@@ -163,6 +172,10 @@ __builtin_choose_expr(((module_id) == CAM_TPG), "CAM-TPG",                  \
 __builtin_choose_expr(((module_id) == CAM_DMA_FENCE), "CAM-DMA-FENCE",      \
 __builtin_choose_expr(((module_id) == CAM_SENSOR_UTIL), "CAM-SENSOR-UTIL",      \
 __builtin_choose_expr(((module_id) == CAM_SYNX), "CAM-SYNX",                \
+__builtin_choose_expr(((module_id) == CAM_APERTURE), "CAM-APERTURE",        \
+__builtin_choose_expr(((module_id) == MI_PARKLENS), "MI-CAM-PARKLENS",      \
+__builtin_choose_expr(((module_id) == MI_DEBUG), "MI-DEBUG",                \
+__builtin_choose_expr(((module_id) == MI_PERF), "MI-PERF",                  \
 "CAMERA")))))))))))))))))))))))))))))))))))))
 
 #define CAM_DBG_MOD_NAME(module_id) \
