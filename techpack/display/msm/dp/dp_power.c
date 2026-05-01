@@ -469,12 +469,6 @@ static int dp_power_clk_enable(struct dp_power *dp_power,
 				goto error;
 			}
 		}
-
-		if (((pm_type == DP_STREAM0_PM) || (pm_type == DP_STREAM1_PM))
-				&& (!power->link_clks_on)) {
-			DP_ERR("Need to enable link clk before stream clks\n");
-			goto error;
-		}
 	}
 
 	rc = dp_power_clk_set_rate(power, pm_type, enable);

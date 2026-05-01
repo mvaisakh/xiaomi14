@@ -676,7 +676,6 @@ struct sde_mdss_color {
  * @skip_blend_plane_w: skip plane width
  * @skip_blend_plane_h: skip plane height
  * @num_ds_enabled: Number of destination scalers enabled
- * @is_crtc_enabled: true if crtc is enabled
  * @overfetch_lines_on_top: extra lines to over fetch on top
  */
 struct sde_hw_cp_cfg {
@@ -697,7 +696,6 @@ struct sde_hw_cp_cfg {
 	u32 skip_blend_plane_w;
 	u32 skip_blend_plane_h;
 	u32 num_ds_enabled;
-	bool is_crtc_enabled;
 	u32 overfetch_lines_on_top;
 };
 

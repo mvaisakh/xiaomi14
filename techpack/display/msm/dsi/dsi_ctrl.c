@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -21,7 +21,6 @@
 #include "dsi_ctrl.h"
 #include "dsi_ctrl_hw.h"
 #include "dsi_clk.h"
-#include "dsi_display.h"
 #include "dsi_pwr.h"
 #include "dsi_catalog.h"
 #include "dsi_panel.h"
@@ -1118,6 +1117,11 @@ static int dsi_ctrl_update_link_freqs(struct dsi_ctrl *dsi_ctrl,
 	dsi_ctrl->clk_freq.pix_clk_rate = pclk_rate;
 	dsi_ctrl->clk_freq.esc_clk_rate = config->esc_clk_rate_hz;
 
+	rc = dsi_clk_set_link_frequencies(clk_handle, dsi_ctrl->clk_freq,
+					dsi_ctrl->cell_index);
+	if (rc)
+		DSI_CTRL_ERR(dsi_ctrl, "Failed to update link frequencies\n");
+
 	return rc;
 }
 
@@ -1572,11 +1576,11 @@ static int dsi_message_tx(struct dsi_ctrl *dsi_ctrl, struct dsi_cmd_desc *cmd_de
 
 		cmdbuf = (u8 *)(dsi_ctrl->vaddr);
 
+		msm_gem_sync(dsi_ctrl->tx_cmd_buf);
 		for (cnt = 0; cnt < length; cnt++)
 			cmdbuf[dsi_ctrl->cmd_len + cnt] = buffer[cnt];
 
 		dsi_ctrl->cmd_len += length;
-		msm_gem_sync(dsi_ctrl->tx_cmd_buf);
 
 		if (*flags & DSI_CTRL_CMD_LAST_COMMAND) {
 			cmd_mem.length = dsi_ctrl->cmd_len;
@@ -2775,9 +2779,6 @@ static void dsi_ctrl_handle_error_status(struct dsi_ctrl *dsi_ctrl,
 				unsigned long error)
 {
 	struct dsi_event_cb_info cb_info;
-	struct dsi_display *display;
-	bool skip_irq_enable = false;
-	bool is_spurious_interrupt = false;
 
 	cb_info = dsi_ctrl->irq_info.irq_err_cb;
 
@@ -2789,10 +2790,6 @@ static void dsi_ctrl_handle_error_status(struct dsi_ctrl *dsi_ctrl,
 	if (dsi_ctrl->hw.ops.clear_error_status)
 		dsi_ctrl->hw.ops.clear_error_status(&dsi_ctrl->hw,
 					error);
-
-	/* check for spurious interrupts */
-	if (dsi_ctrl_check_for_spurious_error_interrupts(dsi_ctrl))
-		is_spurious_interrupt = true;
 
 	/* DTLN PHY error */
 	if (error & 0x3000E00)
@@ -2827,13 +2824,10 @@ static void dsi_ctrl_handle_error_status(struct dsi_ctrl *dsi_ctrl,
 		/* no need to report FIFO overflow if already masked */
 		if (cb_info.event_cb && !(mask & 0xf0000)) {
 			cb_info.event_idx = DSI_FIFO_OVERFLOW;
-			display = cb_info.event_usr_ptr;
-			display->is_spurious_interrupt = is_spurious_interrupt;
 			(void)cb_info.event_cb(cb_info.event_usr_ptr,
 						cb_info.event_idx,
 						dsi_ctrl->cell_index,
 						0, 0, 0, 0);
-			skip_irq_enable = true;
 		}
 	}
 
@@ -2841,13 +2835,10 @@ static void dsi_ctrl_handle_error_status(struct dsi_ctrl *dsi_ctrl,
 	if (error & 0xF00000) {
 		if (cb_info.event_cb) {
 			cb_info.event_idx = DSI_FIFO_UNDERFLOW;
-			display = cb_info.event_usr_ptr;
-			display->is_spurious_interrupt = is_spurious_interrupt;
 			(void)cb_info.event_cb(cb_info.event_usr_ptr,
 						cb_info.event_idx,
 						dsi_ctrl->cell_index,
 						0, 0, 0, 0);
-			skip_irq_enable = true;
 		}
 	}
 
@@ -2866,13 +2857,14 @@ static void dsi_ctrl_handle_error_status(struct dsi_ctrl *dsi_ctrl,
 	 * case and prevent us from re enabling interrupts until a full ESD
 	 * recovery is completed.
 	 */
-	if (is_spurious_interrupt && dsi_ctrl->esd_check_underway) {
+	if (dsi_ctrl_check_for_spurious_error_interrupts(dsi_ctrl) &&
+				dsi_ctrl->esd_check_underway) {
 		dsi_ctrl->hw.ops.soft_reset(&dsi_ctrl->hw);
 		return;
 	}
 
 	/* enable back DSI interrupts */
-	if (dsi_ctrl->hw.ops.error_intr_ctrl && !skip_irq_enable)
+	if (dsi_ctrl->hw.ops.error_intr_ctrl)
 		dsi_ctrl->hw.ops.error_intr_ctrl(&dsi_ctrl->hw, true);
 }
 

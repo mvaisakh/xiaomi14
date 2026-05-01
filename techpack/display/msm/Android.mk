@@ -31,11 +31,10 @@ KBUILD_OPTIONS := DISPLAY_ROOT=$(DISPLAY_BLD_DIR)
 KBUILD_OPTIONS += MODNAME=msm_drm
 KBUILD_OPTIONS += BOARD_PLATFORM=$(TARGET_BOARD_PLATFORM)
 KBUILD_OPTIONS += $(DISPLAY_SELECT)
+KBUILD_OPTIONS += $(DISPLAY_FACTORY_BUILD)
 
 ifneq ($(TARGET_BOARD_AUTO),true)
-ifneq ($(TARGET_BOARD_PLATFORM), pitti)
 KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS+=$(PWD)/$(call intermediates-dir-for,DLKM,mmrm-module-symvers)/Module.symvers
-endif
 ifneq ($(TARGET_BOARD_PLATFORM), taro)
 ifneq ($(TARGET_BOARD_PLATFORM), neo61)
 	KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS+=$(PWD)/$(call intermediates-dir-for,DLKM,sync-fence-module-symvers)/Module.symvers
@@ -56,10 +55,8 @@ LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 
 ifneq ($(TARGET_BOARD_AUTO),true)
-ifneq ($(TARGET_BOARD_PLATFORM), pitti)
 LOCAL_REQUIRED_MODULES    += mmrm-module-symvers
 LOCAL_ADDITIONAL_DEPENDENCIES += $(call intermediates-dir-for,DLKM,mmrm-module-symvers)/Module.symvers
-endif
 ifneq ($(TARGET_BOARD_PLATFORM), taro)
 ifneq ($(TARGET_BOARD_PLATFORM), neo61)
 	LOCAL_REQUIRED_MODULES    += sync-fence-module-symvers

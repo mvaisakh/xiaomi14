@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -1531,9 +1531,7 @@ static bool _sde_rm_check_dsc(struct sde_rm *rm,
 		struct sde_rm_rsvp *rsvp,
 		struct sde_rm_hw_blk *dsc,
 		struct sde_rm_hw_blk *paired_dsc,
-		struct sde_rm_hw_blk *pp_blk,
-		int num_dsc_enc,
-		uint32_t un_paired_dsc_id)
+		struct sde_rm_hw_blk *pp_blk)
 {
 	const struct sde_dsc_cfg *dsc_cfg = to_sde_hw_dsc(dsc->hw)->caps;
 
@@ -1561,19 +1559,6 @@ static bool _sde_rm_check_dsc(struct sde_rm *rm,
 		if (!test_bit(dsc_cfg->id, paired_dsc_cfg->dsc_pair_mask)) {
 			SDE_DEBUG("dsc %d not peer of dsc %d\n", dsc_cfg->id,
 					paired_dsc_cfg->id);
-			return false;
-		}
-	} else {
-		/**
-		 * For topologies, where there is a single DSC requirement,
-		 * Try to allocate unpaired DSCs first such that, pairable
-		 * DSCs are available for other displays.
-		 */
-		if (num_dsc_enc == 1 && un_paired_dsc_id > 0 && un_paired_dsc_id != dsc->id &&
-				IS_COMPATIBLE_PP_DSC(pp_blk->id, un_paired_dsc_id)) {
-			SDE_DEBUG("number of dsc %d, dsc %d can't match of pp %d\n",
-					num_dsc_enc, un_paired_dsc_id,
-					pp_blk ? pp_blk->id : -1);
 			return false;
 		}
 	}
@@ -1621,30 +1606,6 @@ static void sde_rm_get_rsvp_nxt_hw_blks(
 	}
 }
 
-static uint32_t _sde_rm_reserve_un_paired_dsc(
-		struct sde_rm_rsvp *rsvp,
-		struct sde_rm_requirements *reqs,
-		struct sde_rm *rm)
-{
-	const struct sde_dsc_cfg *dsc_cfg;
-	struct sde_rm_hw_iter iter_i;
-
-	if (reqs->topology->num_comp_enc != 1)
-		return 0;
-
-	sde_rm_init_hw_iter(&iter_i, 0, SDE_HW_BLK_DSC);
-
-	while (_sde_rm_get_hw_locked(rm, &iter_i, true)) {
-		dsc_cfg = to_sde_hw_dsc(iter_i.blk->hw)->caps;
-		if (RESERVED_BY_OTHER(iter_i.blk, rsvp))
-			continue;
-		if (!dsc_cfg->dsc_pair_mask[0])
-			return iter_i.blk->id;
-	}
-
-	return 0;
-}
-
 static int _sde_rm_reserve_dsc(
 		struct sde_rm *rm,
 		struct sde_rm_rsvp *rsvp,
@@ -1653,7 +1614,7 @@ static int _sde_rm_reserve_dsc(
 {
 	struct sde_rm_hw_iter iter_i, iter_j;
 	struct sde_rm_hw_blk *dsc[MAX_BLOCKS];
-	u32 reserve_mask = 0, un_paired_dsc_id;
+	u32 reserve_mask = 0;
 	struct sde_rm_hw_blk *pp[MAX_BLOCKS];
 	int alloc_count = 0;
 	int num_dsc_enc;
@@ -1684,21 +1645,21 @@ static int _sde_rm_reserve_dsc(
 			list_forward = sde_encoder_is_dsi_display(encoder);
 	}
 
-	un_paired_dsc_id = _sde_rm_reserve_un_paired_dsc(rsvp, reqs, rm);
 	sde_rm_get_rsvp_nxt_hw_blks(rm, rsvp, SDE_HW_BLK_PINGPONG, pp, list_forward);
 
 	/* Find a first DSC */
 	while (alloc_count != num_dsc_enc &&
 			_sde_rm_get_hw_locked(rm, &iter_i, list_forward)) {
-		int req_index = list_forward ? alloc_count : (num_dsc_enc - alloc_count - 1);
-		const struct sde_hw_dsc *hw_dsc = to_sde_hw_dsc(iter_i.blk->hw);
+		const struct sde_hw_dsc *hw_dsc = to_sde_hw_dsc(
+				iter_i.blk->hw);
 		unsigned long features = hw_dsc->caps->features;
-		bool has_422_420_support = BIT(SDE_DSC_NATIVE_422_EN) & features;
+		bool has_422_420_support =
+			BIT(SDE_DSC_NATIVE_422_EN) & features;
 
 		if (reserve_mask & (1 << iter_i.blk->id))
 			continue;
 
-		if (_dsc_ids && (iter_i.blk->id != _dsc_ids[req_index]))
+		if (_dsc_ids && (iter_i.blk->id != _dsc_ids[alloc_count]))
 			continue;
 
 		/* if this hw block does not support required feature */
@@ -1707,13 +1668,13 @@ static int _sde_rm_reserve_dsc(
 			continue;
 
 		if (!_sde_rm_check_dsc(rm, rsvp, iter_i.blk, NULL,
-					 pp[alloc_count], num_dsc_enc, un_paired_dsc_id))
+					 pp[alloc_count]))
 			continue;
 
 		SDE_DEBUG("blk id = %d, _dsc_ids[%d] = %d\n",
 			iter_i.blk->id,
 			alloc_count,
-			_dsc_ids ? _dsc_ids[req_index] : -1);
+			_dsc_ids ? _dsc_ids[alloc_count] : -1);
 
 		/* reset and restart from current block if allocated dsc blocks are not contiguous */
 		if (alloc_count >= 1 && (abs(dsc[alloc_count - 1]->id - iter_i.blk->id) != 1)) {
@@ -1732,22 +1693,21 @@ static int _sde_rm_reserve_dsc(
 		sde_rm_init_hw_iter(&iter_j, 0, SDE_HW_BLK_DSC);
 
 		while (_sde_rm_get_hw_locked(rm, &iter_j, list_forward)) {
-			req_index = list_forward ? alloc_count : (num_dsc_enc - alloc_count - 1);
 			if (reserve_mask & (1 << iter_j.blk->id))
 				continue;
 
 			if (_dsc_ids && (iter_j.blk->id !=
-					_dsc_ids[req_index]))
+					_dsc_ids[alloc_count]))
 				continue;
 
-			if (!_sde_rm_check_dsc(rm, rsvp, iter_j.blk, iter_i.blk,
-					 pp[alloc_count], num_dsc_enc, 0))
+			if (!_sde_rm_check_dsc(rm, rsvp, iter_j.blk,
+					 iter_i.blk, pp[alloc_count]))
 				continue;
 
 			SDE_DEBUG("blk id = %d, _dsc_ids[%d] = %d\n",
 				iter_j.blk->id,
 				alloc_count,
-				_dsc_ids ? _dsc_ids[req_index] : -1);
+				_dsc_ids ? _dsc_ids[alloc_count] : -1);
 
 			reserve_mask |= (1 << iter_j.blk->id);
 			dsc[alloc_count++] = iter_j.blk;
@@ -2355,7 +2315,7 @@ int sde_rm_cont_splash_res_init(struct msm_drm_private *priv,
 				struct sde_mdss_cfg *cat)
 {
 	struct sde_rm_hw_iter iter_c;
-	int index = 0, ctl_top_cnt, splash_disp_count = 0;
+	int index = 0, ctl_top_cnt;
 	struct sde_kms *sde_kms = NULL;
 	struct sde_hw_mdp *hw_mdp;
 	struct sde_splash_display *splash_display;
@@ -2383,7 +2343,7 @@ int sde_rm_cont_splash_res_init(struct msm_drm_private *priv,
 
 	sde_rm_init_hw_iter(&iter_c, 0, SDE_HW_BLK_CTL);
 	while (_sde_rm_get_hw_locked(rm, &iter_c, true)
-			&& (splash_disp_count < splash_data->num_splash_displays)) {
+			&& (index < splash_data->num_splash_displays)) {
 		struct sde_hw_ctl *ctl = to_sde_hw_ctl(iter_c.blk->hw);
 
 		if (!ctl->ops.get_ctl_intf) {
@@ -2393,8 +2353,7 @@ int sde_rm_cont_splash_res_init(struct msm_drm_private *priv,
 
 		intf_sel = ctl->ops.get_ctl_intf(ctl);
 		if (intf_sel) {
-			splash_display =
-				&splash_data->splash_display[index ? 1 : 0];
+			splash_display =  &splash_data->splash_display[index];
 			SDE_DEBUG("finding resources for display=%d ctl=%d\n",
 					index, iter_c.blk->id - CTL_0);
 
@@ -2403,7 +2362,6 @@ int sde_rm_cont_splash_res_init(struct msm_drm_private *priv,
 			splash_display->cont_splash_enabled = true;
 			splash_display->ctl_ids[splash_display->ctl_cnt++] =
 				iter_c.blk->id;
-			splash_disp_count++;
 		}
 		index++;
 	}

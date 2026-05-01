@@ -529,7 +529,85 @@ void dsi_ctrl_hw_cmn_set_video_timing(struct dsi_ctrl_hw *ctrl,
 	DSI_CTRL_HW_DBG(ctrl, "ctrl video parameters updated\n");
 	SDE_EVT32(v_total, h_total);
 }
+#ifdef MI_DISPLAY_MODIFY
+/**
+ * get_video_timing() - get the timing for video frame
+ * @ctrl:          Pointer to controller host hardware.
+ * @mode:          Video mode information.
+ *
+ * Get the video timing parameters for the DSI video mode operation.
+ */
+u32 dsi_ctrl_hw_cmn_get_video_timing(struct dsi_ctrl_hw *ctrl,
+				     const char *type)
+{
+	u32 dsi_val = 0;
 
+	if (strncmp(type, "HPW", 3) == 0) {
+		u32 tmp_hpw;
+
+		tmp_hpw = DSI_R32(ctrl, DSI_VIDEO_MODE_HSYNC);
+		dsi_val  = (tmp_hpw >> 16) & 0xFFFF;
+		return dsi_val;
+	} else if (strncmp(type, "HFP", 3) == 0) {
+		u32 tmp_hfp, h_total, active_h_end;
+
+		tmp_hfp = DSI_R32(ctrl, DSI_VIDEO_MODE_TOTAL);
+		h_total = tmp_hfp & 0xFFFF;
+
+		tmp_hfp = DSI_R32(ctrl, DSI_VIDEO_MODE_ACTIVE_H);
+		active_h_end = (tmp_hfp >> 16) & 0xFFFF;
+
+		tmp_hfp = h_total - active_h_end + 1;
+
+		return tmp_hfp;
+	} else if (strncmp(type, "HBP", 3) == 0) {
+		u32 tmp_hbp;
+		u32 hs_end, active_h_start;
+
+		tmp_hbp = DSI_R32(ctrl, DSI_VIDEO_MODE_HSYNC);
+		hs_end  = (tmp_hbp >> 16) & 0xFFFF;
+		tmp_hbp = DSI_R32(ctrl, DSI_VIDEO_MODE_ACTIVE_H);
+		active_h_start = tmp_hbp & 0xFFFF;
+		tmp_hbp = active_h_start - hs_end;
+
+		return tmp_hbp;
+
+	} else if (strncmp(type, "VPW", 3) == 0) {
+		u32 tmp_vpw;
+
+		tmp_vpw = DSI_R32(ctrl, DSI_VIDEO_MODE_VSYNC_VPOS);
+		dsi_val  = (tmp_vpw >> 16) & 0xFFFF;
+
+		return dsi_val;
+	} else if (strncmp(type, "VFP", 3) == 0) {
+		u32 tmp_vfp, v_total, active_v_end;
+
+		tmp_vfp = DSI_R32(ctrl, DSI_VIDEO_MODE_TOTAL);
+		v_total = (tmp_vfp >> 16) & 0xFFFF;
+
+		tmp_vfp = DSI_R32(ctrl, + DSI_VIDEO_MODE_ACTIVE_V);
+		active_v_end = (tmp_vfp >> 16) & 0xFFFF;
+
+		tmp_vfp = v_total - active_v_end + 1;
+
+		return tmp_vfp;
+	} else if (strncmp(type, "VBP", 3) == 0) {
+		u32 tmp_vbp, vpos_end, active_v_start;
+
+		tmp_vbp = DSI_R32(ctrl, DSI_VIDEO_MODE_VSYNC_VPOS);
+		vpos_end  = (tmp_vbp >> 16) & 0xFFFF;
+
+		tmp_vbp = DSI_R32(ctrl, DSI_VIDEO_MODE_ACTIVE_V);
+		active_v_start = tmp_vbp & 0xFFFF;
+
+		tmp_vbp = active_v_start - vpos_end;
+		return tmp_vbp;
+	}
+
+	dsi_val = 0;
+	return dsi_val;
+}
+#endif
 /**
  * setup_cmd_stream() - set up parameters for command pixel streams
  * @ctrl:              Pointer to controller host hardware.
@@ -1204,12 +1282,11 @@ void dsi_ctrl_hw_cmn_clear_interrupt_status(struct dsi_ctrl_hw *ctrl, u32 ints)
 		reg |= BIT(30);
 
 	/*
-	 * Do not clear error status. It will be cleared as part of error handler function.
-	 * Do not clear dynamic refresh done status. It will be cleared as part of
-	 * wait4dynamic_refresh_done() function.
+	 * Do not clear error status.
+	 * It will be cleared as part of
+	 * error handler function.
 	 */
-	reg &= ~(BIT(24) | BIT(28));
-
+	reg &= ~BIT(24);
 	DSI_W32(ctrl, DSI_INT_CTRL, reg);
 
 	DSI_CTRL_HW_DBG(ctrl, "Clear interrupts, ints = 0x%x, INT_CTRL=0x%x\n",
@@ -1747,26 +1824,26 @@ int dsi_ctrl_hw_cmn_ctrl_reset(struct dsi_ctrl_hw *ctrl,
 
 	DSI_CTRL_HW_DBG(ctrl, "DSI CTRL and PHY reset, mask=%d\n", mask);
 
-	data = DSI_R32(ctrl, DSI_CTRL);
+	data = DSI_R32(ctrl, 0x0004);
 	/* Disable DSI video mode */
-	DSI_W32(ctrl, DSI_CTRL, (data & ~BIT(1)));
+	DSI_W32(ctrl, 0x004, (data & ~BIT(1)));
 	wmb(); /* ensure register committed */
 	/* Disable DSI controller */
-	DSI_W32(ctrl, DSI_CTRL, (data & ~(BIT(0) | BIT(1))));
+	DSI_W32(ctrl, 0x004, (data & ~(BIT(0) | BIT(1))));
 	wmb(); /* ensure register committed */
 	/* "Force On" all dynamic clocks */
-	DSI_W32(ctrl, DSI_CLK_CTRL, 0x100a00);
+	DSI_W32(ctrl, 0x11c, 0x100a00);
 
 	/* DSI_SW_RESET */
-	DSI_W32(ctrl, DSI_SOFT_RESET, 0x1);
+	DSI_W32(ctrl, 0x118, 0x1);
 	wmb(); /* ensure register is committed */
-	DSI_W32(ctrl, DSI_SOFT_RESET, 0x0);
+	DSI_W32(ctrl, 0x118, 0x0);
 	wmb(); /* ensure register is committed */
 
 	/* Remove "Force On" all dynamic clocks */
-	DSI_W32(ctrl, DSI_CLK_CTRL, 0x00);
+	DSI_W32(ctrl, 0x11c, 0x00);
 	/* Enable DSI controller */
-	DSI_W32(ctrl, DSI_CTRL, (data & ~BIT(1)));
+	DSI_W32(ctrl, 0x004, (data & ~BIT(1)));
 	wmb(); /* ensure register committed */
 
 	return rc;
@@ -1775,13 +1852,12 @@ int dsi_ctrl_hw_cmn_ctrl_reset(struct dsi_ctrl_hw *ctrl,
 void dsi_ctrl_hw_cmn_mask_error_intr(struct dsi_ctrl_hw *ctrl, u32 idx, bool en)
 {
 	u32 reg = 0;
-	u32 fifo_status = 0, timeout_status = 0, pll_unlock_status = 0;
+	u32 fifo_status = 0, timeout_status = 0;
 	u32 overflow_clear = BIT(10) | BIT(18) | BIT(22) | BIT(26) | BIT(30);
 	u32 underflow_clear = BIT(19) | BIT(23) | BIT(27) | BIT(31);
 	u32 lp_rx_clear = BIT(4);
-	u32 pll_unlock_clear = BIT(16);
 
-	reg = DSI_R32(ctrl, DSI_ERR_INT_MASK0);
+	reg = DSI_R32(ctrl, 0x10c);
 
 	/*
 	 * Before unmasking we should clear the corresponding error status bits
@@ -1796,8 +1872,8 @@ void dsi_ctrl_hw_cmn_mask_error_intr(struct dsi_ctrl_hw *ctrl, u32 idx, bool en)
 		} else {
 			reg &= ~(0x1f << 16);
 			reg &= ~BIT(9);
-			fifo_status = DSI_R32(ctrl, DSI_FIFO_STATUS);
-			DSI_W32(ctrl, DSI_FIFO_STATUS, fifo_status | overflow_clear);
+			fifo_status = DSI_R32(ctrl, 0x00c);
+			DSI_W32(ctrl, 0x00c, fifo_status | overflow_clear);
 		}
 	}
 
@@ -1806,8 +1882,8 @@ void dsi_ctrl_hw_cmn_mask_error_intr(struct dsi_ctrl_hw *ctrl, u32 idx, bool en)
 			reg |= (0x1b << 26);
 		else {
 			reg &= ~(0x1b << 26);
-			fifo_status = DSI_R32(ctrl, DSI_FIFO_STATUS);
-			DSI_W32(ctrl, DSI_FIFO_STATUS, fifo_status | underflow_clear);
+			fifo_status = DSI_R32(ctrl, 0x00c);
+			DSI_W32(ctrl, 0x00c, fifo_status | underflow_clear);
 		}
 	}
 
@@ -1816,22 +1892,19 @@ void dsi_ctrl_hw_cmn_mask_error_intr(struct dsi_ctrl_hw *ctrl, u32 idx, bool en)
 			reg |= (0x7 << 23);
 		else {
 			reg &= ~(0x7 << 23);
-			timeout_status = DSI_R32(ctrl, DSI_TIMEOUT_STATUS);
-			DSI_W32(ctrl, DSI_TIMEOUT_STATUS, timeout_status | lp_rx_clear);
+			timeout_status = DSI_R32(ctrl, 0x0c0);
+			DSI_W32(ctrl, 0x0c0, timeout_status | lp_rx_clear);
 		}
 	}
 
 	if (idx & BIT(DSI_PLL_UNLOCK_ERR)) {
 		if (en)
 			reg |= BIT(28);
-		else {
+		else
 			reg &= ~BIT(28);
-			pll_unlock_status = DSI_R32(ctrl, DSI_CLK_STATUS);
-			DSI_W32(ctrl, DSI_CLK_STATUS, pll_unlock_status | pll_unlock_clear);
-		}
 	}
 
-	DSI_W32(ctrl, DSI_ERR_INT_MASK0, reg);
+	DSI_W32(ctrl, 0x10c, reg);
 	wmb(); /* ensure error is masked */
 }
 
@@ -1840,7 +1913,7 @@ void dsi_ctrl_hw_cmn_error_intr_ctrl(struct dsi_ctrl_hw *ctrl, bool en)
 	u32 reg = 0;
 	u32 dsi_total_mask = 0x2222AA02;
 
-	reg = DSI_R32(ctrl, DSI_INT_CTRL);
+	reg = DSI_R32(ctrl, 0x110);
 	reg &= dsi_total_mask;
 
 	if (en)
@@ -1848,7 +1921,7 @@ void dsi_ctrl_hw_cmn_error_intr_ctrl(struct dsi_ctrl_hw *ctrl, bool en)
 	else
 		reg &= ~BIT(25);
 
-	DSI_W32(ctrl, DSI_INT_CTRL, reg);
+	DSI_W32(ctrl, 0x110, reg);
 	wmb(); /* ensure error is masked */
 }
 
@@ -1856,7 +1929,7 @@ u32 dsi_ctrl_hw_cmn_get_error_mask(struct dsi_ctrl_hw *ctrl)
 {
 	u32 reg = 0;
 
-	reg = DSI_R32(ctrl, DSI_ERR_INT_MASK0);
+	reg = DSI_R32(ctrl, 0x10c);
 
 	return reg;
 }
@@ -1865,7 +1938,7 @@ u32 dsi_ctrl_hw_cmn_get_hw_version(struct dsi_ctrl_hw *ctrl)
 {
 	u32 reg = 0;
 
-	reg = DSI_R32(ctrl, DSI_HW_VERSION);
+	reg = DSI_R32(ctrl, 0x0);
 
 	return reg;
 }

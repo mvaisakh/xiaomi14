@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 
-KBUILD_OPTIONS+= DISPLAY_ROOT=$(KERNEL_SRC)/$(M)/../
+KBUILD_OPTIONS+= DISPLAY_ROOT=$(srctree)/techpack/display
 
 all: modules
 

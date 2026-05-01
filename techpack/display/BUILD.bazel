@@ -55,6 +55,14 @@ ddk_headers(
 )
 
 ddk_headers(
+    name = "mi_disp",
+    hdrs = glob([
+      "msm/mi_disp/*.h",
+    ]),
+    includes = ["msm/mi_disp"]
+)
+
+ddk_headers(
     name = "rotator_headers",
     hdrs = glob([
       "rotator/*.h",
@@ -72,7 +80,7 @@ ddk_headers(
 
 ddk_headers(
     name = "display_drivers_headers",
-    hdrs = [ ":linux_includes", ":uapi_headers", ":msm_headers",":dp_headers",":dsi_headers",":sde_headers",":rotator_headers"]
+    hdrs = [ ":linux_includes", ":uapi_headers", ":msm_headers",":dp_headers",":dsi_headers",":sde_headers",":rotator_headers", ":mi_disp"]
 )
 
 ddk_uapi_headers(
@@ -82,6 +90,11 @@ ddk_uapi_headers(
     ],
     out = "display-uapi-headers.tar.gz",
     kernel_build = "//:target_kernel_build",
+)
+
+config_setting(
+    name = "factory_build",
+    define_values = { "FACTORY_BUILD": "1" }
 )
 
 load(":target.bzl", "define_display_target")

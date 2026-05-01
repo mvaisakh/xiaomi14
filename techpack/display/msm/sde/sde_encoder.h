@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
@@ -181,7 +181,6 @@ enum sde_sim_qsync_event {
  * @rsc_state_init:		boolean to indicate rsc config init
  * @disp_info:			local copy of msm_display_info struct
  * @misr_enable:		misr enable/disable status
- * @vsync_cnt:			Vsync count for the physical encoder
  * @misr_reconfigure:		boolean entry indicates misr reconfigure status
  * @misr_frame_count:		misr frame count before start capturing the data
  * @idle_pc_enabled:		indicate if idle power collapse is enabled
@@ -224,7 +223,6 @@ enum sde_sim_qsync_event {
  * @ctl_done_supported          boolean flag to indicate the availability of
  *                              ctl done irq support for the hardware
  * @dynamic_irqs_config         bitmask config to enable encoder dynamic irqs
- * @vsync_event_wq              Queue to wait for the vsync event complete
  */
 struct sde_encoder_virt {
 	struct drm_encoder base;
@@ -263,7 +261,6 @@ struct sde_encoder_virt {
 	bool rsc_state_init;
 	struct msm_display_info disp_info;
 	atomic_t misr_enable;
-	atomic_t vsync_cnt;
 	bool misr_reconfigure;
 	u32 misr_frame_count;
 
@@ -298,7 +295,6 @@ struct sde_encoder_virt {
 	bool ctl_done_supported;
 
 	unsigned long dynamic_irqs_config;
-	wait_queue_head_t vsync_event_wq;
 };
 
 #define to_sde_encoder_virt(x) container_of(x, struct sde_encoder_virt, base)
@@ -388,12 +384,6 @@ int sde_encoder_prepare_for_kickoff(struct drm_encoder *encoder,
  */
 void sde_encoder_trigger_kickoff_pending(struct drm_encoder *encoder);
 
-/**
- * sde_encoder_reset_kickoff_timeout_ms - Reset the kickoff_timout after modeset
- *        commit for command mode display.
- * @encoder:	encoder pointer
- */
-void sde_encoder_reset_kickoff_timeout_ms(struct drm_encoder *encoder);
 /**
  * sde_encoder_kickoff - trigger a double buffer flip of the ctl path
  *	(i.e. ctl flush and start) immediately.
@@ -488,6 +478,8 @@ bool sde_encoder_is_dsc_merge(struct drm_encoder *drm_enc);
  * @Return: true if it is cmd mode
  */
 bool sde_encoder_check_curr_mode(struct drm_encoder *drm_enc, u32 mode);
+
+uint32_t sde_encoder_get_clones(struct drm_encoder *drm_enc);
 
 /**
  * sde_encoder_init - initialize virtual encoder object
