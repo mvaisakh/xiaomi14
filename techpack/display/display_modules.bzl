@@ -1,6 +1,10 @@
 load(":display_driver_build.bzl", "display_module_entry")
 
-display_driver_modules = display_module_entry([":display_drivers_headers"])
+display_driver_modules = display_module_entry([
+                            ":display_drivers_headers",
+                            "//msm-kernel:mi_irq_headers",
+                            "//msm-kernel:miev_headers",
+                        ])
 module_entry = display_driver_modules.register
 
 #---------- MSM-DRM MODULE -------------------------
@@ -154,18 +158,34 @@ module_entry(
             "msm/msm_gem_vma.c",
             "msm/msm_smmu.c",
             "msm/msm_prop.c",
+            "msm/mi_disp/mi_disp_core.c",
+            "msm/mi_disp/mi_disp_feature.c",
+            "msm/mi_disp/mi_disp_sysfs.c",
+            "msm/mi_disp/mi_disp_file.c",
+            "msm/mi_disp/mi_disp_procfs.c",
+            "msm/mi_disp/mi_disp_debugfs.c",
+            "msm/mi_disp/mi_disp_log.c",
+            "msm/mi_disp/mi_disp_flatmode.c",
+            "msm/mi_disp/mi_disp_lhbm.c",
+            "msm/mi_disp/mi_disp_parser.c",
+            "msm/mi_disp/mi_dsi_display.c",
+            "msm/mi_disp/mi_dsi_panel.c",
+            "msm/mi_disp/mi_sde_crtc.c",
+            "msm/mi_disp/mi_sde_encoder.c",
+            "msm/mi_disp/mi_sde_connector.c",
+            "msm/mi_disp/mi_disp_print.c",
          ],
          "CONFIG_MSM_SDE_ROTATOR":{
             True: [
                "rotator/sde_rotator_dev.c",
                "rotator/sde_rotator_core.c",
-               "rotator/sde_rotator_base.c",
+               "rotator/sde_rotator_base.c ",
                "rotator/sde_rotator_formats.c",
                "rotator/sde_rotator_util.c",
                "rotator/sde_rotator_io_util.c",
                "rotator/sde_rotator_smmu.c",
                "rotator/sde_rotator_r1_wb.c",
-               "rotator/sde_rotator_r1_pipe.c",
+               "rotator/sde_rotator_r1_pipe.c ",
                "rotator/sde_rotator_r1_ctl.c",
                "rotator/sde_rotator_r1.c",
                "rotator/sde_rotator_r3.c"],
@@ -175,21 +195,11 @@ module_entry(
                               "rotator/sde_rotator_r3_debug.c"],
             },
       },
-      config_deps = {
-        "CONFIG_HDCP_QSEECOM" : [
-            "//vendor/qcom/opensource/securemsm-kernel:%b_hdcp_qseecom_dlkm"
-        ],
-        "CONFIG_MSM_MMRM" : [
-            "//vendor/qcom/opensource/mmrm-driver:%b_mmrm_driver"
-        ],
-        "CONFIG_QCOM_SPEC_SYNC" : [
-            "//vendor/qcom/opensource/mm-drivers/sync_fence:%b_sync_fence"
-        ],
-        "CONFIG_QTI_HW_FENCE" : [
-            "//vendor/qcom/opensource/mm-drivers/hw_fence:%b_msm_hw_fence"
-        ],
-        "CONFIG_MSM_EXT_DISPLAY" : [
-            "//vendor/qcom/opensource/mm-drivers/msm_ext_display:%b_msm_ext_display"
-        ],
-       }
+      deps = [
+         "//vendor/qcom/opensource/mm-drivers/hw_fence:%b_msm_hw_fence",
+         "//vendor/qcom/opensource/mm-drivers/sync_fence:%b_sync_fence",
+         "//vendor/qcom/opensource/mm-drivers/msm_ext_display:%b_msm_ext_display",
+         "//vendor/qcom/opensource/mmrm-driver:%b_mmrm_driver",
+         "//vendor/qcom/opensource/securemsm-kernel:%b_hdcp_qseecom_dlkm"
+      ],
 )

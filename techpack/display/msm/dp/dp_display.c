@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -170,7 +170,6 @@ struct dp_display_private {
 
 	enum drm_connector_status cached_connector_status;
 	enum dp_display_states state;
-	enum dp_aux_switch_type switch_type;
 
 	struct platform_device *pdev;
 	struct device_node *aux_switch_node;
@@ -1191,11 +1190,6 @@ static void dp_display_host_deinit(struct dp_display_private *dp)
 		return;
 	}
 
-	if (dp_display_state_is(DP_STATE_READY)) {
-		DP_DEBUG("dp deinit before unready\n");
-		dp_display_host_unready(dp);
-	}
-
 	dp_display_abort_hdcp(dp, true);
 	dp->ctrl->deinit(dp->ctrl);
 	dp->hpd->host_deinit(dp->hpd, &dp->catalog->hpd);
@@ -1552,9 +1546,6 @@ static void dp_display_clear_reservation(struct dp_display *dp, struct dp_panel 
 
 	dp_display->tot_lm_blks_in_use -= panel->max_lm;
 	panel->max_lm = 0;
-
-	if (!dp_display->active_stream_cnt)
-		dp_display->tot_lm_blks_in_use = 0;
 
 	mutex_unlock(&dp_display->accounting_lock);
 }
@@ -2123,7 +2114,6 @@ static int dp_init_sub_modules(struct dp_display_private *dp)
 	int rc = 0;
 	u32 dp_core_revision = 0;
 	bool hdcp_disabled;
-	const char *phandle = "qcom,dp-aux-switch";
 	struct device *dev = &dp->pdev->dev;
 	struct dp_hpd_cb *cb = &dp->hpd_cb;
 	struct dp_ctrl_in ctrl_in = {
@@ -2170,25 +2160,8 @@ static int dp_init_sub_modules(struct dp_display_private *dp)
 
 	dp_core_revision = dp_catalog_get_dp_core_version(dp->catalog);
 
-	dp->aux_switch_node = of_parse_phandle(dp->pdev->dev.of_node, phandle, 0);
-	if (!dp->aux_switch_node) {
-		dp->no_aux_switch = true;
-		DP_WARN("Aux switch node not found, assigning bypass mode as switch type\n");
-		dp->switch_type = DP_AUX_SWITCH_BYPASS;
-		goto skip_node_name;
-	}
-
-	if (!strcmp(dp->aux_switch_node->name, "fsa4480"))
-		dp->switch_type = DP_AUX_SWITCH_FSA4480;
-	else if (!strcmp(dp->aux_switch_node->name, "wcd939x_i2c"))
-		dp->switch_type = DP_AUX_SWITCH_WCD939x;
-	else
-		dp->switch_type = DP_AUX_SWITCH_BYPASS;
-
-skip_node_name:
 	dp->aux = dp_aux_get(dev, &dp->catalog->aux, dp->parser,
-			dp->aux_switch_node, dp->aux_bridge, g_dp_display->dp_aux_ipc_log,
-			dp->switch_type);
+			dp->aux_switch_node, dp->aux_bridge, g_dp_display->dp_aux_ipc_log);
 	if (IS_ERR(dp->aux)) {
 		rc = PTR_ERR(dp->aux);
 		DP_ERR("failed to initialize aux, rc = %d\n", rc);
@@ -3763,6 +3736,46 @@ static void dp_display_wakeup_phy_layer(struct dp_display *dp_display,
 		hpd->wakeup_phy(hpd, wakeup);
 }
 
+static int dp_display_get_display_type(struct dp_display *dp_display,
+		const char **display_type)
+{
+	struct dp_display_private *dp;
+
+	if (!dp_display || !display_type) {
+		pr_err("invalid input\n");
+		return -EINVAL;
+	}
+
+	dp = container_of(dp_display, struct dp_display_private, dp_display);
+
+	*display_type = dp->parser->display_type;
+
+	return 0;
+}
+
+static int dp_display_mst_get_fixed_topology_display_type(
+		struct dp_display *dp_display, u32 strm_id,
+		const char **display_type)
+{
+	struct dp_display_private *dp;
+
+	if (!dp_display || !display_type) {
+		pr_err("invalid input\n");
+		return -EINVAL;
+	}
+
+	if (strm_id >= DP_STREAM_MAX) {
+		pr_err("invalid stream id:%d\n", strm_id);
+		return -EINVAL;
+	}
+
+	dp = container_of(dp_display, struct dp_display_private, dp_display);
+
+	*display_type = dp->parser->mst_fixed_display_type[strm_id];
+
+	return 0;
+}
+
 static int dp_display_probe(struct platform_device *pdev)
 {
 	int rc = 0;
@@ -3847,6 +3860,9 @@ static int dp_display_probe(struct platform_device *pdev)
 	g_dp_display->clear_reservation = dp_display_clear_reservation;
 	g_dp_display->get_mst_pbn_div = dp_display_get_mst_pbn_div;
 	g_dp_display->get_active_stream_count = dp_display_get_active_stream_count;
+	g_dp_display->get_display_type = dp_display_get_display_type;
+	g_dp_display->mst_get_fixed_topology_display_type =
+				dp_display_mst_get_fixed_topology_display_type;
 
 	rc = component_add(&pdev->dev, &dp_display_comp_ops);
 	if (rc) {
