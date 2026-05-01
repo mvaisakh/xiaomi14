@@ -188,7 +188,7 @@ static int cam_ois_init_subdev_param(struct cam_ois_ctrl_t *o_ctrl)
 static int cam_ois_i2c_component_bind(struct device *dev,
 	struct device *master_dev, void *data)
 {
-	int                          rc = 0;
+	int                          rc = 0, i = 0;
 	struct i2c_client           *client = NULL;
 	struct cam_ois_ctrl_t       *o_ctrl = NULL;
 	struct cam_ois_soc_private  *soc_private = NULL;
@@ -214,6 +214,39 @@ static int cam_ois_i2c_component_bind(struct device *dev,
 	o_ctrl->ois_device_type = MSM_CAMERA_I2C_DEVICE;
 	o_ctrl->io_master_info.master_type = I2C_MASTER;
 	o_ctrl->io_master_info.client = client;
+
+	INIT_LIST_HEAD(&(o_ctrl->i2c_parklens_data.list_head));
+	parklens_atomic_set(&(o_ctrl->parklens_ctrl.parklens_opcode),
+		ENTER_PARKLENS_WITH_POWERDOWN);
+	parklens_atomic_set(&(o_ctrl->parklens_ctrl.exit_result),
+		PARKLENS_ENTER);
+	parklens_atomic_set(&(o_ctrl->parklens_ctrl.parklens_state),
+		PARKLENS_INVALID);
+	o_ctrl->parklens_ctrl.parklens_thread = NULL;
+	o_ctrl->i2c_data.per_frame =
+		kzalloc(sizeof(struct i2c_settings_array) *
+		MAX_PER_FRAME_ARRAY, GFP_KERNEL);
+
+	INIT_LIST_HEAD(&(o_ctrl->i2c_data.init_settings.list_head));
+
+	if (NULL == o_ctrl->i2c_data.per_frame)
+	{
+		rc = -ENOMEM;
+		goto octrl_free;
+	}
+
+	for (i = 0; i < MAX_PER_FRAME_ARRAY; i++)
+		INIT_LIST_HEAD(&(o_ctrl->i2c_data.per_frame[i].list_head));
+
+	o_ctrl->bridge_intf.device_hdl = -1;
+	o_ctrl->bridge_intf.link_hdl = -1;
+	o_ctrl->bridge_intf.ops.get_dev_info =
+		cam_ois_publish_dev_info;
+	o_ctrl->bridge_intf.ops.link_setup =
+		cam_ois_establish_link;
+	o_ctrl->bridge_intf.ops.apply_req =
+		cam_ois_apply_request;
+	o_ctrl->last_flush_req = 0;
 
 	soc_private = kzalloc(sizeof(struct cam_ois_soc_private),
 		GFP_KERNEL);
@@ -243,6 +276,11 @@ static int cam_ois_i2c_component_bind(struct device *dev,
 soc_free:
 	kfree(soc_private);
 octrl_free:
+	if (NULL != o_ctrl->i2c_data.per_frame)
+	{
+		kfree(o_ctrl->i2c_data.per_frame);
+		o_ctrl->i2c_data.per_frame = NULL;
+	}
 	kfree(o_ctrl);
 probe_failure:
 	return rc;
@@ -285,6 +323,11 @@ static void cam_ois_i2c_component_unbind(struct device *dev,
 	cam_ois_shutdown(o_ctrl);
 	mutex_unlock(&(o_ctrl->ois_mutex));
 	cam_unregister_subdev(&(o_ctrl->v4l2_dev_str));
+	if (NULL != o_ctrl->i2c_data.per_frame)
+	{
+		kfree(o_ctrl->i2c_data.per_frame);
+		o_ctrl->i2c_data.per_frame = NULL;
+	}
 
 	kfree(o_ctrl->soc_info.soc_private);
 	v4l2_set_subdevdata(&o_ctrl->v4l2_dev_str.sd, NULL);
@@ -375,6 +418,17 @@ static int cam_ois_component_bind(struct device *dev,
 	soc_private->power_info.dev  = &pdev->dev;
 
 	memset(&o_ctrl->fw_info, 0, sizeof(struct cam_cmd_ois_fw_info));
+	o_ctrl->i2c_data.per_frame =
+		kzalloc(sizeof(struct i2c_settings_array) *
+		MAX_PER_FRAME_ARRAY, GFP_KERNEL);
+	if (o_ctrl->i2c_data.per_frame == NULL) {
+		rc = -ENOMEM;
+		goto free_soc;
+	}
+
+	for (i = 0; i < MAX_PER_FRAME_ARRAY; i++)
+		INIT_LIST_HEAD(&(o_ctrl->i2c_data.per_frame[i].list_head));
+
 
 	INIT_LIST_HEAD(&(o_ctrl->i2c_init_data.list_head));
 	INIT_LIST_HEAD(&(o_ctrl->i2c_calib_data.list_head));
@@ -386,6 +440,7 @@ static int cam_ois_component_bind(struct device *dev,
 	INIT_LIST_HEAD(&(o_ctrl->i2c_fw_version_data.list_head));
 	INIT_LIST_HEAD(&(o_ctrl->i2c_mode_data.list_head));
 	INIT_LIST_HEAD(&(o_ctrl->i2c_time_data.list_head));
+	INIT_LIST_HEAD(&(o_ctrl->i2c_postinit_data.list_head));
 	mutex_init(&(o_ctrl->ois_mutex));
 	rc = cam_ois_driver_soc_init(o_ctrl);
 	if (rc) {
@@ -403,6 +458,16 @@ static int cam_ois_component_bind(struct device *dev,
 		goto unreg_subdev;
 	}
 	o_ctrl->bridge_intf.device_hdl = -1;
+	o_ctrl->bridge_intf.link_hdl = -1;
+	o_ctrl->bridge_intf.ops.get_dev_info =
+		cam_ois_publish_dev_info;
+	o_ctrl->bridge_intf.ops.link_setup =
+		cam_ois_establish_link;
+	o_ctrl->bridge_intf.ops.apply_req =
+		cam_ois_apply_request;
+	o_ctrl->bridge_intf.ops.flush_req =
+		cam_ois_flush_request;
+	o_ctrl->last_flush_req = 0;
 
 	cam_sensor_module_add_i2c_device((void *) o_ctrl, CAM_SENSOR_OIS);
 
@@ -411,6 +476,15 @@ static int cam_ois_component_bind(struct device *dev,
 
 	g_i3c_ois_data[o_ctrl->soc_info.index].o_ctrl = o_ctrl;
 	init_completion(&g_i3c_ois_data[o_ctrl->soc_info.index].probe_complete);
+
+	INIT_LIST_HEAD(&(o_ctrl->i2c_parklens_data.list_head));
+	parklens_atomic_set(&(o_ctrl->parklens_ctrl.parklens_opcode),
+		ENTER_PARKLENS_WITH_POWERDOWN);
+	parklens_atomic_set(&(o_ctrl->parklens_ctrl.exit_result),
+		PARKLENS_ENTER);
+	parklens_atomic_set(&(o_ctrl->parklens_ctrl.parklens_state),
+		PARKLENS_INVALID);
+	o_ctrl->parklens_ctrl.parklens_thread = NULL;
 
 	CAM_DBG(CAM_OIS, "Component bound successfully");
 	return rc;
@@ -421,6 +495,11 @@ free_soc:
 free_cci_client:
 	kfree(o_ctrl->io_master_info.cci_client);
 free_o_ctrl:
+	if (NULL != o_ctrl->i2c_data.per_frame)
+	{
+		kfree(o_ctrl->i2c_data.per_frame);
+		o_ctrl->i2c_data.per_frame = NULL;
+	}
 	kfree(o_ctrl);
 	return rc;
 }
@@ -459,6 +538,11 @@ static void cam_ois_component_unbind(struct device *dev,
 	cam_ois_shutdown(o_ctrl);
 	mutex_unlock(&(o_ctrl->ois_mutex));
 	cam_unregister_subdev(&(o_ctrl->v4l2_dev_str));
+	if (NULL != o_ctrl->i2c_data.per_frame)
+	{
+		kfree(o_ctrl->i2c_data.per_frame);
+		o_ctrl->i2c_data.per_frame = NULL;
+	}
 
 	kfree(o_ctrl->soc_info.soc_private);
 	kfree(o_ctrl->io_master_info.cci_client);

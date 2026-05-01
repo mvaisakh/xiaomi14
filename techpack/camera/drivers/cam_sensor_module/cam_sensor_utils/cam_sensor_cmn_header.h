@@ -35,6 +35,7 @@
 #define CAM_EEPROM_NAME    "cam-eeprom"
 #define CAM_OIS_NAME       "cam-ois"
 #define CAM_TPG_NAME       "cam-tpg"
+#define CAM_APERTURE_NAME  "cam-aperture"
 
 #define MAX_SYSTEM_PIPELINE_DELAY 2
 
@@ -111,6 +112,9 @@ enum msm_camera_power_seq_type {
 	SENSOR_CUSTOM_GPIO1,
 	SENSOR_CUSTOM_GPIO2,
 	SENSOR_VANA1,
+	SENSOR_BOB,
+	SENSOR_BOB2,
+	SENSOR_CUSTOM_REG3,
 	SENSOR_SEQ_TYPE_MAX,
 };
 
@@ -258,6 +262,8 @@ struct i2c_data_settings {
 	struct i2c_settings_array *bubble_update;
 	struct i2c_settings_array reg_bank_unlock_settings;
 	struct i2c_settings_array reg_bank_lock_settings;
+	struct i2c_settings_array write_settings;
+	struct i2c_settings_array parklens_settings;
 };
 
 struct cam_sensor_power_ctrl_t {
@@ -269,6 +275,8 @@ struct cam_sensor_power_ctrl_t {
 	struct msm_camera_gpio_num_info *gpio_num_info;
 	struct msm_pinctrl_info pinctrl_info;
 	uint8_t cam_pinctrl_status;
+	enum msm_camera_power_seq_type fail_type;
+
 };
 
 struct cam_camera_slave_info {
@@ -342,6 +350,9 @@ enum msm_camera_vreg_name_t {
 	CAM_VDIG,
 	CAM_VIO,
 	CAM_VANA,
+	CAM_VANA1,
+	CAM_BOB,
+	CAM_BOB2,
 	CAM_VAF,
 	CAM_V_CUSTOM1,
 	CAM_V_CUSTOM2,
