@@ -456,7 +456,7 @@ static int syna_spi_parse_dt(struct syna_hw_interface *hw_if,
 	struct syna_hw_bus_data *bus = &hw_if->bdata_io;
 
 	retval = of_property_read_string_index(np,
-				"synaptics,firmware_names", index, &name);
+				"synaptics,fw-image-name", index, &name);
 	if (retval < 0)
 		LOGE("Firmware name not specified");
 	else {
