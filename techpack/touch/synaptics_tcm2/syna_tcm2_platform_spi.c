@@ -454,13 +454,21 @@ static int syna_spi_parse_dt(struct syna_hw_interface *hw_if,
 	struct syna_hw_rst_data *rst = &hw_if->bdata_rst;
 	struct syna_hw_bus_data *bus = &hw_if->bdata_io;
 
+	retval = of_property_read_string(np, "synaptics,default-fw-image-name",
+					 &hw_if->default_fw_name);
+	if (retval && (retval != -EINVAL)) {
+		LOGE("Unable to read default fw name\n");
+	} else {
+		LOGI("default fw_name:%s\n", hw_if->default_fw_name);
+	}
+
 	retval = of_property_read_string(np, "synaptics,fw-image-name",
 					 &hw_if->fw_name);
 	if (retval && (retval != -EINVAL)) {
-		hw_if->fw_name = NULL;
-		LOGE("Unable to read default fw name\n");
+		LOGE("Unable to read fw name, falling back to default fw\n");
+		hw_if->fw_name = hw_if->default_fw_name; 
 	} else {
-		LOGI("default fw_name:%s\n", hw_if->fw_name);
+		LOGI("fw_name:%s\n", hw_if->fw_name);
 	}
 
 	prop = of_find_property(np, "synaptics,irq-gpio", NULL);
