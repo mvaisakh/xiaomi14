@@ -1525,10 +1525,10 @@ static void syna_dev_reflash_startup_work(struct work_struct *work)
 
 	/* get firmware image */
 	retval = request_firmware(&fw_entry,
-			tcm->hw_if->fw_name,
+			tcm->hw_if->default_fw_name,
 			tcm->pdev->dev.parent);
 	if (retval < 0) {
-		LOGE("Fail to request %s\n", tcm->hw_if->fw_name);
+		LOGE("Fail to request default firmware %s\n", tcm->hw_if->fw_name);
 		return;
 	}
 
