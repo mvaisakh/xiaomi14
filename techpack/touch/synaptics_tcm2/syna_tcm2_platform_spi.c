@@ -44,7 +44,8 @@
 
 #define SPI_MODULE_NAME "synaptics_tcm_spi"
 
-static unsigned char *buf;
+static unsigned char *rx_buf;
+static unsigned char *tx_buf;
 
 static unsigned int buf_size;
 
@@ -721,20 +722,33 @@ static int syna_spi_alloc_mem(unsigned int count, unsigned int size)
 	}
 
 	if (size > buf_size) {
-		if (buf_size)
-			syna_pal_mem_free((void *)buf);
-		buf = syna_pal_mem_alloc(size, sizeof(unsigned char));
-		if (!buf) {
-			LOGE("Fail to allocate memory for buf\n");
+		if (rx_buf) {
+			syna_pal_mem_free((void *)rx_buf);
+			rx_buf = NULL;
+		}
+		if (tx_buf) {
+			syna_pal_mem_free((void *)tx_buf);
+			tx_buf = NULL;
+		}
+
+		rx_buf = syna_pal_mem_alloc(size, sizeof(unsigned char));
+		if (!rx_buf) {
+			LOGE("Fail to allocate memory for rx_buf\n");
 			buf_size = 0;
 			return -ENOMEM;
 		}
+		tx_buf = syna_pal_mem_alloc(size, sizeof(unsigned char));
+		if (!tx_buf) {
+			LOGE("Fail to allocate memory for tx_buf\n");
+			buf_size = 0;
+			return -ENOMEM;
+		}
+
 		buf_size = size;
 	}
 
 	return 0;
 }
-
 
 /**
  * syna_spi_read()
@@ -778,9 +792,9 @@ static int syna_spi_read(struct syna_hw_interface *hw_if,
 	}
 
 	if (bus->spi_byte_delay_us == 0) {
-		syna_pal_mem_set(buf, 0xff, rd_len);
+		syna_pal_mem_set(tx_buf, 0xff, rd_len);
 		xfer[0].len = rd_len;
-		xfer[0].tx_buf = buf;
+		xfer[0].tx_buf = tx_buf;
 		xfer[0].rx_buf = rd_data;
 		if (bus->spi_block_delay_us) {
 			xfer[0].delay.unit = SPI_DELAY_UNIT_USECS;
@@ -788,10 +802,10 @@ static int syna_spi_read(struct syna_hw_interface *hw_if,
 		}
 		spi_message_add_tail(&xfer[0], &msg);
 	} else {
-		buf[0] = 0xff;
+		tx_buf[0] = 0xff;
 		for (idx = 0; idx < rd_len; idx++) {
 			xfer[idx].len = 1;
-			xfer[idx].tx_buf = buf;
+			xfer[idx].tx_buf = tx_buf;
 			xfer[idx].rx_buf = &rd_data[idx];
 			xfer[idx].delay.unit = SPI_DELAY_UNIT_USECS;
 			xfer[idx].delay.value =  bus->spi_byte_delay_us;
@@ -1119,7 +1133,15 @@ int syna_hw_interface_init(void)
  */
 void syna_hw_interface_exit(void)
 {
-	syna_pal_mem_free((void *)buf);
+	if (rx_buf) {
+		syna_pal_mem_free((void *)rx_buf);
+		rx_buf = NULL;
+	}
+
+	if (tx_buf) {
+		syna_pal_mem_free((void *)tx_buf);
+		tx_buf = NULL;
+	}
 
 	syna_pal_mem_free((void *)xfer);
 
