@@ -758,18 +758,11 @@ static int syna_spi_read(struct syna_hw_interface *hw_if,
 	struct spi_message msg;
 	struct spi_device *spi = hw_if->pdev;
 	struct syna_hw_bus_data *bus = &hw_if->bdata_io;
-	unsigned char *dma_buf;
 
 	if (!spi) {
 		LOGE("Invalid bus io device\n");
 		return -EINVAL;
 	}
-
-	dma_buf = kzalloc(rd_len, GFP_KERNEL);
-    if (!dma_buf) {
-        LOGE("Failed to allocate DMA bounce buffer\n");
-        return -ENOMEM;
-    }
 
 	syna_pal_mutex_lock(&bus->io_mutex);
 
@@ -788,7 +781,7 @@ static int syna_spi_read(struct syna_hw_interface *hw_if,
 		syna_pal_mem_set(buf, 0xff, rd_len);
 		xfer[0].len = rd_len;
 		xfer[0].tx_buf = buf;
-		xfer[0].rx_buf = dma_buf;
+		xfer[0].rx_buf = rd_data;
 		if (bus->spi_block_delay_us) {
 			xfer[0].delay.unit = SPI_DELAY_UNIT_USECS;
 			xfer[0].delay.value = bus->spi_block_delay_us;
@@ -799,7 +792,7 @@ static int syna_spi_read(struct syna_hw_interface *hw_if,
 		for (idx = 0; idx < rd_len; idx++) {
 			xfer[idx].len = 1;
 			xfer[idx].tx_buf = buf;
-			xfer[idx].rx_buf = &dma_buf[idx];
+			xfer[idx].rx_buf = &rd_data[idx];
 			xfer[idx].delay.unit = SPI_DELAY_UNIT_USECS;
 			xfer[idx].delay.value =  bus->spi_byte_delay_us;
 			if (bus->spi_block_delay_us && (idx == rd_len - 1)) {
@@ -816,14 +809,10 @@ static int syna_spi_read(struct syna_hw_interface *hw_if,
 		goto exit;
 	}
 
-	memcpy(rd_data, dma_buf, rd_len);
-
 	retval = rd_len;
 
 exit:
 	syna_pal_mutex_unlock(&bus->io_mutex);
-
-	kfree(dma_buf);
 
 	return retval;
 }
@@ -850,20 +839,11 @@ static int syna_spi_write(struct syna_hw_interface *hw_if,
 	struct spi_message msg;
 	struct spi_device *spi = hw_if->pdev;
 	struct syna_hw_bus_data *bus = &hw_if->bdata_io;
-	unsigned char *dma_buf;
 
 	if (!spi) {
 		LOGE("Invalid bus io device\n");
 		return -EINVAL;
 	}
-
-	dma_buf = kzalloc(wr_len, GFP_KERNEL);
-    if (!dma_buf) {
-        LOGE("Failed to allocate DMA bounce buffer\n");
-        return -ENOMEM;
-    }
-
-	memcpy(dma_buf, wr_data, wr_len);
 
 	syna_pal_mutex_lock(&bus->io_mutex);
 
@@ -880,7 +860,7 @@ static int syna_spi_write(struct syna_hw_interface *hw_if,
 
 	if (bus->spi_byte_delay_us == 0) {
 		xfer[0].len = wr_len;
-		xfer[0].tx_buf = dma_buf;
+		xfer[0].tx_buf = wr_data;
 		if (bus->spi_block_delay_us) {
 			xfer[0].delay.unit = SPI_DELAY_UNIT_USECS;
 			xfer[0].delay.value = bus->spi_block_delay_us;
@@ -889,7 +869,7 @@ static int syna_spi_write(struct syna_hw_interface *hw_if,
 	} else {
 		for (idx = 0; idx < wr_len; idx++) {
 			xfer[idx].len = 1;
-			xfer[idx].tx_buf = &dma_buf[idx];
+			xfer[idx].tx_buf = &wr_data[idx];
 			xfer[idx].delay.unit = SPI_DELAY_UNIT_USECS;
 			xfer[idx].delay.value = bus->spi_byte_delay_us;
 			if (bus->spi_block_delay_us && (idx == wr_len - 1)) {
@@ -910,8 +890,6 @@ static int syna_spi_write(struct syna_hw_interface *hw_if,
 
 exit:
 	syna_pal_mutex_unlock(&bus->io_mutex);
-
-	kfree(dma_buf);
 
 	return retval;
 }
