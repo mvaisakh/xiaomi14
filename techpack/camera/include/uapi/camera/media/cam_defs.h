@@ -94,6 +94,7 @@ struct cam_control {
 	__u32        handle_type;
 	__u32        reserved;
 	__u64        handle;
+	__u64        reserved2;
 };
 
 /* camera IOCTL */
