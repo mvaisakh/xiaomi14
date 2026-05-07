@@ -30,7 +30,6 @@
 #define CAM_COMMON_IFE_NODE  "IFE"
 #define CAM_COMMON_ICP_NODE  "IPE"
 #define CAM_COMMON_JPEG_NODE "JPEG"
-#define CAM_COMMON_TFE_NODE "TFE"
 
 #define CAM_COMMON_NS_PER_MS              1000000ULL
 
@@ -125,8 +124,7 @@ enum cam_common_evt_inject_str_id_type {
 };
 
 enum cam_common_evt_inject_hw_id {
-	CAM_COMMON_EVT_INJECT_HW_IFE,
-	CAM_COMMON_EVT_INJECT_HW_TFE,
+	CAM_COMMON_EVT_INJECT_HW_ISP,
 	CAM_COMMON_EVT_INJECT_HW_ICP,
 	CAM_COMMON_EVT_INJECT_HW_JPEG,
 	CAM_COMMON_EVT_INJECT_HW_MAX
@@ -409,5 +407,25 @@ int cam_common_user_dump_helper(
 int cam_common_register_evt_inject_cb(
 	cam_common_evt_inject_cb evt_inject_cb,
 	enum cam_common_evt_inject_hw_id hw_id);
+
+// xiaomi add cam_retry_kcalloc
+/**
+ * cam_retry_kcalloc()
+ *
+ * @brief                  retry kcalloc
+ *
+ * @func:                  the name of the function that called this function.
+ * @line:                  line of code.
+ * @n:                     how many bytes of memory are required.
+ * @s:                     how many bytes of memory are required.
+ * @flags:                 the type of memory to allocate (see kmalloc).
+ *
+ */
+void *cam_retry_kcalloc(
+	const char *func,
+	int line,
+	size_t n,
+	size_t s,
+	gfp_t gfp);
 
 #endif /* _CAM_COMMON_UTIL_H_ */

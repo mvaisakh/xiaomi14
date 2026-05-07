@@ -1,38 +1,25 @@
 load("//build/kernel/kleaf:kernel.bzl", "ddk_module")
 load("//build/bazel_common_rules/dist:dist.bzl", "copy_to_dist_dir")
-load("//msm-kernel:target_variants.bzl", "get_all_variants")
-load("//msm-kernel:target_variants.bzl", "get_all_lunch_target_base_target_variants")
 
-def _define_module(target, variant, lunch_target=None):
-    if lunch_target:
-        tv = "{}_{}".format(target, variant)
-        tvl = "{}_{}_{}".format(target, variant, lunch_target)
-        ddk_mod_name = "{}_camera".format(tvl)
-        defconfig = "{}_defconfig".format(lunch_target)
-    else:
-        tv = "{}_{}".format(target, variant)
-        ddk_mod_name = "{}_camera".format(tv)
-        defconfig = "{}_defconfig".format(target)
-
+def _define_module(target, variant):
+    tv = "{}_{}".format(target, variant)
     deps = [
         ":camera_headers",
         ":camera_banner",
         "//msm-kernel:all_headers",
-        "//vendor/qcom/opensource/securemsm-kernel:smcinvoke_kernel_headers",
-        "//vendor/qcom/opensource/securemsm-kernel:smmu_proxy_headers",
-        "//vendor/qcom/opensource/securemsm-kernel:{}_smcinvoke_dlkm".format(tv),
-        "//vendor/qcom/opensource/securemsm-kernel:{}_smmu_proxy_dlkm".format(tv),
-        "//vendor/qcom/opensource/mmrm-driver:{}_mmrm_driver".format(tv),
     ]
-
     if target == "pineapple":
         deps.extend([
             "//vendor/qcom/opensource/synx-kernel:synx_headers",
             "//vendor/qcom/opensource/synx-kernel:{}_modules".format(tv),
+            "//vendor/qcom/opensource/securemsm-kernel:smcinvoke_kernel_headers",
+            "//vendor/qcom/opensource/securemsm-kernel:smmu_proxy_headers",
+            "//vendor/qcom/opensource/securemsm-kernel:{}_smcinvoke_dlkm".format(tv),
+            "//vendor/qcom/opensource/securemsm-kernel:{}_smmu_proxy_dlkm".format(tv),
+            "//vendor/qcom/opensource/mmrm-driver:{}_mmrm_driver".format(tv),
         ])
-
     ddk_module(
-        name = ddk_mod_name,
+        name = "{}_camera".format(tv),
         out = "camera.ko",
         srcs = [
             "drivers/cam_req_mgr/cam_req_mgr_core.c",
@@ -148,23 +135,6 @@ def _define_module(target, variant, lunch_target=None):
                     "drivers/cam_icp/hfi.c",
                 ],
             },
-            "CONFIG_SPECTRA_TFE": {
-                True: [
-                    "drivers/cam_isp/isp_hw_mgr/isp_hw/ppi_hw/cam_csid_ppi_core.c",
-                    "drivers/cam_isp/isp_hw_mgr/isp_hw/ppi_hw/cam_csid_ppi_dev.c",
-                    "drivers/cam_isp/isp_hw_mgr/isp_hw/ppi_hw/cam_csid_ppi100.c",
-                    "drivers/cam_isp/isp_hw_mgr/isp_hw/tfe_csid_hw/cam_tfe_csid.c",
-                    "drivers/cam_isp/isp_hw_mgr/isp_hw/tfe_csid_hw/cam_tfe_csid_dev.c",
-                    "drivers/cam_isp/isp_hw_mgr/isp_hw/tfe_csid_hw/cam_tfe_csid_core.c",
-                    "drivers/cam_isp/isp_hw_mgr/isp_hw/tfe_csid_hw/cam_tfe_csid_soc.c",
-                    "drivers/cam_isp/isp_hw_mgr/isp_hw/tfe_hw/cam_tfe_bus.c",
-                    "drivers/cam_isp/isp_hw_mgr/isp_hw/tfe_hw/cam_tfe_core.c",
-                    "drivers/cam_isp/isp_hw_mgr/isp_hw/tfe_hw/cam_tfe_soc.c",
-                    "drivers/cam_isp/isp_hw_mgr/isp_hw/tfe_hw/cam_tfe.c",
-                    "drivers/cam_isp/isp_hw_mgr/isp_hw/tfe_hw/cam_tfe_dev.c",
-                    "drivers/cam_isp/isp_hw_mgr/cam_tfe_hw_mgr.c",
-                ],
-            },
             "CONFIG_SPECTRA_JPEG": {
                 True: [
                     "drivers/cam_jpeg/jpeg_hw/jpeg_enc_hw/jpeg_enc_dev.c",
@@ -176,19 +146,6 @@ def _define_module(target, variant, lunch_target=None):
                     "drivers/cam_jpeg/jpeg_hw/cam_jpeg_hw_mgr.c",
                     "drivers/cam_jpeg/cam_jpeg_dev.c",
                     "drivers/cam_jpeg/cam_jpeg_context.c",
-                ],
-            },
-            "CONFIG_SPECTRA_CRE": {
-                True: [
-                    "drivers/cam_cre/cam_cre_hw_mgr/cre_hw/cre_core.c",
-                    "drivers/cam_cre/cam_cre_hw_mgr/cre_hw/cre_soc.c",
-                    "drivers/cam_cre/cam_cre_hw_mgr/cre_hw/cre_dev.c",
-                    "drivers/cam_cre/cam_cre_hw_mgr/cre_hw/top/cre_top.c",
-                    "drivers/cam_cre/cam_cre_hw_mgr/cre_hw/bus_rd/cre_bus_rd.c",
-                    "drivers/cam_cre/cam_cre_hw_mgr/cre_hw/bus_wr/cre_bus_wr.c",
-                    "drivers/cam_cre/cam_cre_hw_mgr/cam_cre_hw_mgr.c",
-                    "drivers/cam_cre/cam_cre_dev.c",
-                    "drivers/cam_cre/cam_cre_context.c",
                 ],
             },
             "CONFIG_SPECTRA_SENSOR": {
@@ -259,25 +216,16 @@ def _define_module(target, variant, lunch_target=None):
                 ],
             },
         },
-
-        copts = ["-Wno-implicit-fallthrough", "-include", "$(location :camera_banner)"],
-
+        copts = ["-include", "$(location :camera_banner)"],
         deps = deps,
         kconfig = "Kconfig",
-        defconfig = defconfig,
+        defconfig = "{}_defconfig".format(tv),
         kernel_build = "//msm-kernel:{}".format(tv),
     )
 
-    if lunch_target:
-        dist_target_name = "{}_camera_dist".format(tvl)
-        data = [":{}_camera".format(tvl)]
-    else:
-        dist_target_name = "{}_camera_dist".format(tv)
-        data = [":{}_camera".format(tv)]
-
     copy_to_dist_dir(
-	name = dist_target_name,
-        data = data,
+        name = "{}_camera_dist".format(tv),
+        data = [":{}_camera".format(tv)],
         dist_dir = "out/target/product/{}/dlkm/lib/modules/".format(target),
         flat = True,
         wipe_dist_dir = False,
@@ -286,7 +234,5 @@ def _define_module(target, variant, lunch_target=None):
     )
 
 def define_camera_module():
-    for (t, v) in get_all_variants():
-        _define_module(t, v)
-    for (lt, bt, v) in get_all_lunch_target_base_target_variants():
-        _define_module(bt, v, lt)
+    _define_module("pineapple", "gki")
+    _define_module("pineapple", "consolidate")

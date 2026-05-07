@@ -190,7 +190,6 @@ enum cam_isp_hw_cmd_type {
 	CAM_ISP_HW_CMD_BW_UPDATE,
 	CAM_ISP_HW_CMD_BW_UPDATE_V2,
 	CAM_ISP_HW_CMD_BW_CONTROL,
-	CAM_ISP_HW_CMD_FCG_CONFIG,
 	CAM_ISP_HW_CMD_STOP_BUS_ERR_IRQ,
 	CAM_ISP_HW_CMD_GET_REG_DUMP,
 	CAM_ISP_HW_CMD_UBWC_UPDATE,
@@ -214,7 +213,6 @@ enum cam_isp_hw_cmd_type {
 	CAM_ISP_HW_CMD_FE_TRIGGER_CMD,
 	CAM_ISP_HW_CMD_UNMASK_BUS_WR_IRQ,
 	CAM_ISP_HW_CMD_IS_CONSUMED_ADDR_SUPPORT,
-	CAM_ISP_HW_CMD_GET_LAST_CONSUMED_ADDR,
 	CAM_ISP_HW_CMD_GET_RES_FOR_MID,
 	CAM_ISP_HW_CMD_BLANKING_UPDATE,
 	CAM_ISP_HW_CMD_CSID_CLOCK_DUMP,
@@ -256,10 +254,7 @@ enum cam_isp_hw_cmd_type {
 	CAM_ISP_HW_CMD_IRQ_INJECTION,
 	CAM_ISP_HW_CMD_DUMP_IRQ_DESCRIPTION,
 	CAM_ISP_HW_CMD_GET_SET_PRIM_SOF_TS_ADDR,
-	CAM_ISP_HW_CMD_DYNAMIC_CLOCK_UPDATE,
-	CAM_ISP_HW_CMD_SET_SYNC_HW_IDX,
-	CAM_ISP_HW_CMD_BUS_WM_DISABLE,
-	CAM_ISP_HW_CMD_BUFFER_ALIGNMENT_UPDATE,
+	CAM_ISP_HW_CMD_GET_LAST_CONSUMED_ADDR,
 	CAM_ISP_HW_CMD_MAX,
 };
 
@@ -441,75 +436,18 @@ struct cam_isp_hw_get_wm_update {
  * @Brief:           Get the out resource id for given mid
  *
  * @mid:             Mid number of hw outport numb
- * @pid:             Pid number associated with mid
  * @out_res_id:      Out resource id
  *
  */
 struct cam_isp_hw_get_res_for_mid {
 	uint32_t                       mid;
-	uint32_t                       pid;
 	uint32_t                       out_res_id;
-};
-
-/**
- * struct cam_isp_hw_fcg_get_size:
- *
- * @Brief:            Get the size of KMD buf FCG config needs
- *
- * @num_types:        Num of types(STATS/PHASE) for each FCG config
- * @num_ctxs:         Num of contexts for each FCG config in MC_TFE
- * @kmd_size:         Size of KMD buffer that will be used for FCG
- * @fcg_supported:    Indicate whether FCG is supported by the hardware
- */
-struct cam_isp_hw_fcg_get_size {
-	uint32_t                                     num_types;
-	uint32_t                                     num_ctxs;
-	uint32_t                                     kmd_size;
-	bool                                         fcg_supported;
-};
-
-/**
- * struct cam_isp_hw_fcg_update:
- *
- * @Brief:            Get FCG update and pass to lower level processing
- *
- * @cmd_addr:         Command buffer address that FCG configs are written into
- * @cmd_size:         Size of the command
- * @prediction_idx:   Indicate exact FCG predictions to be used
- * @data:             Exact FCG configs
- */
-struct cam_isp_hw_fcg_update {
-	uintptr_t                                    cmd_buf_addr;
-	uint32_t                                     cmd_size;
-	uint32_t                                     prediction_idx;
-	void                                        *data;
-};
-
-/**
- * struct cam_isp_hw_fcg_cmd
- *
- * @Brief:            Union struct for fcg related cmd
- *
- * @res:              Resource node
- * @cmd_type:         Command type
- * @get_size_flag:    Indicate to get kmd size for FCG or apply FCG update
- *                    True - Get the size of KMD buffer to carry reg/val pairs
- *                    False - Apply FCG update and pass it to SFE/IFE/MC_TFE
- */
-struct cam_isp_hw_fcg_cmd {
-	struct cam_isp_resource_node                *res;
-	enum cam_isp_hw_cmd_type                     cmd_type;
-	bool                                         get_size_flag;
-	union {
-		struct cam_isp_hw_fcg_update         fcg_update;
-		struct cam_isp_hw_fcg_get_size       fcg_get_size;
-	} u;
 };
 
 /*
  * struct cam_isp_hw_get_cmd_update:
  *
- * @Brief:           Get cmd buffer update for different CMD types
+ * @Brief:          Get cmd buffer update for different CMD types
  *
  * @res:             Resource node
  * @cmd_type:        Command type for which to get update
@@ -520,7 +458,6 @@ struct cam_isp_hw_fcg_cmd {
  * @cmd:             Command buffer information
  * @use_scratch_cfg: To indicate if it's scratch buffer config
  * @trigger_cdm_en:  Flag to indicate if cdm is trigger
- * @reg_write:        if set use AHB to config rup/aup
  *
  */
 struct cam_isp_hw_get_cmd_update {
@@ -535,7 +472,6 @@ struct cam_isp_hw_get_cmd_update {
 		struct cam_isp_hw_get_wm_update      *rm_update;
 	};
 	bool trigger_cdm_en;
-	bool reg_write;
 };
 
 /*
@@ -589,20 +525,6 @@ struct cam_isp_hw_dump_header {
 	uint8_t   tag[CAM_ISP_HW_DUMP_TAG_MAX_LEN];
 	uint64_t  size;
 	uint32_t  word_size;
-};
-
-/**
- * struct cam_isp_session_data - Session data
- *
- * @Brief:          ISP session or usecase data
- *
- * @link_hdl:       Link handle
- * @is_shdr:        Indicate is usecase is shdr
- *
- */
-struct cam_isp_session_data {
-	int32_t   link_hdl;
-	bool      is_shdr;
 };
 
 /**

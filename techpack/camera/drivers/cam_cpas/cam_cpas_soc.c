@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/device.h>
@@ -1454,9 +1454,6 @@ int cam_cpas_get_custom_dt_info(struct cam_hw_info *cpas_hw,
 
 		soc_private->num_vdd_ahb_mapping = count;
 	}
-
-	soc_private->enable_secure_qos_update = of_property_read_bool(of_node,
-			"enable-secure-qos-update");
 
 	soc_private->enable_smart_qos = of_property_read_bool(of_node,
 			"enable-smart-qos");

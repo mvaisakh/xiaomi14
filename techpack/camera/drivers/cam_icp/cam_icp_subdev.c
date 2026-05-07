@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/delay.h>
@@ -251,8 +251,11 @@ const struct v4l2_subdev_internal_ops cam_icp_subdev_internal_ops = {
 
 static inline int cam_icp_subdev_clean_up(uint32_t device_idx)
 {
-	kfree(g_icp_dev[device_idx]);
-	g_icp_dev[device_idx] = NULL;
+	struct cam_icp_subdev *icp_subdev;
+
+	icp_subdev = g_icp_dev[device_idx];
+	icp_subdev->node = NULL;
+	icp_subdev->open_cnt = 0;
 
 	return 0;
 }
@@ -294,6 +297,13 @@ static int cam_icp_component_bind(struct device *dev,
 	else
 		subdev_name = cam_icp_subdev_name_arr[device_idx];
 
+	icp_dev = kzalloc(sizeof(struct cam_icp_subdev), GFP_KERNEL);
+	if (!icp_dev) {
+		CAM_ERR(CAM_ICP,
+			"Unable to allocate memory for icp device:%s size:%llu",
+			pdev->name, sizeof(struct cam_icp_subdev));
+		return -ENOMEM;
+	}
 
 	mutex_lock(&g_dev_lock);
 	if (g_icp_dev[device_idx]) {
@@ -304,17 +314,6 @@ static int cam_icp_component_bind(struct device *dev,
 		mutex_unlock(&g_dev_lock);
 		goto probe_fail;
 	}
-	mutex_unlock(&g_dev_lock);
-
-	icp_dev = kzalloc(sizeof(struct cam_icp_subdev), GFP_KERNEL);
-	if (!icp_dev) {
-		CAM_ERR(CAM_ICP,
-			"Unable to allocate memory for icp device:%s size:%llu",
-			pdev->name, sizeof(struct cam_icp_subdev));
-		return -ENOMEM;
-	}
-
-	mutex_lock(&g_dev_lock);
 	g_icp_dev[device_idx] = icp_dev;
 	mutex_unlock(&g_dev_lock);
 
@@ -374,7 +373,6 @@ ctx_fail:
 		cam_icp_context_deinit(&icp_dev->ctx_icp[i]);
 	cam_icp_hw_mgr_deinit(device_idx);
 hw_init_fail:
-	cam_node_deinit(icp_dev->node);
 	cam_subdev_remove(&icp_dev->sd);
 probe_fail:
 	cam_icp_subdev_clean_up(device_idx);

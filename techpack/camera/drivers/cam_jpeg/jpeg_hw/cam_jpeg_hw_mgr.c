@@ -169,10 +169,6 @@ static int cam_jpeg_add_command_buffers(struct cam_packet *packet,
 		num_entry);
 
 	for (i = 0; i < packet->num_cmd_buf; i++) {
-		rc = cam_packet_util_validate_cmd_desc(&cmd_desc[i]);
-		if (rc)
-			return rc;
-
 		CAM_DBG(CAM_JPEG,
 			"Metadata: %u Offset: 0x%x Length: %u mem_handle: 0x%x num_entry: %d",
 			cmd_desc[i].meta_data, cmd_desc[i].offset,
@@ -1994,13 +1990,11 @@ static void cam_jpeg_mgr_dump_pf_data(
 		&jpeg_pid_mid_args, sizeof(jpeg_pid_mid_args));
 	if (rc) {
 		CAM_ERR(CAM_JPEG, "CAM_JPEG_CMD_MATCH_PID_MID failed %d", rc);
-		cam_packet_util_put_packet_addr(pf_req_info->packet_handle);
 		return;
 	}
 
 	if (!jpeg_pid_mid_args.pid_match_found) {
 		CAM_INFO(CAM_JPEG, "This context data is not matched with pf pid and mid");
-		cam_packet_util_put_packet_addr(pf_req_info->packet_handle);
 		return;
 	}
 	pf_args->pf_context_info.resource_type = jpeg_pid_mid_args.match_res;
@@ -2009,7 +2003,7 @@ iodump:
 	cam_packet_util_dump_io_bufs(packet, hw_mgr->iommu_hdl, hw_mgr->iommu_sec_hdl,
 		pf_args, hw_pid_support);
 	cam_packet_util_put_packet_addr(pf_req_info->packet_handle);
-
+  
 	/* Dump JPEG registers for debug purpose */
 	if (dev_type == CAM_JPEG_RES_TYPE_DMA ||
 		dev_type == CAM_JPEG_RES_TYPE_ENC) {
@@ -2023,6 +2017,7 @@ iodump:
 	} else {
 		CAM_ERR(CAM_JPEG, "Invalid dev_type %d", dev_type);
 	}
+	cam_packet_util_put_packet_addr(pf_req_info->packet_handle);
 }
 
 static int cam_jpeg_mgr_cmd(void *hw_mgr_priv, void *cmd_args)

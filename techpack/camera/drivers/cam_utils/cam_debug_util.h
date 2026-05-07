@@ -90,7 +90,24 @@ enum cam_debug_priority {
 	CAM_DBG_PRIORITY_2,
 };
 
-static const char __maybe_unused *cam_debug_mod_name[CAM_DBG_MOD_MAX] = {
+/* xiaomi add hw trigger - begin */
+/*
+ * CAM_DEBUG_HW_TRIGGER
+ * @brief    :  This macro is used to set the value of GPIO and print the corresponding
+ *              log when the status meets the conditions.
+ *
+ * @__module :  Respective module id which is been calling this Macro
+ * @fmt      :  Formatted string which needs to be print in log
+ * @args     :  Arguments which needs to be print in log
+ */
+#define CAM_DEBUG_HW_TRIGGER(status, __module, fmt, args...)                  \
+	({if (unlikely(status)) {                                             \
+		cam_debug_hw_trigger(__module, status);                       \
+		CAM_ERR(__module, fmt, ##args);                               \
+	}})
+/* xiaomi add hw trigger - end */
+
+static const char *cam_debug_mod_name[CAM_DBG_MOD_MAX] = {
 	[CAM_CDM]         = "CAM-CDM",
 	[CAM_CORE]        = "CAM-CORE",
 	[CAM_CRM]         = "CAM-CRM",
@@ -176,7 +193,7 @@ __builtin_choose_expr(((module_id) == CAM_APERTURE), "CAM-APERTURE",        \
 __builtin_choose_expr(((module_id) == MI_PARKLENS), "MI-CAM-PARKLENS",      \
 __builtin_choose_expr(((module_id) == MI_DEBUG), "MI-DEBUG",                \
 __builtin_choose_expr(((module_id) == MI_PERF), "MI-PERF",                  \
-"CAMERA")))))))))))))))))))))))))))))))))))))
+"CAMERA")))))))))))))))))))))))))))))))))))))))))
 
 #define CAM_DBG_MOD_NAME(module_id) \
 ((module_id < CAM_DBG_MOD_MAX) ? cam_debug_mod_name[module_id] : "CAMERA")
@@ -185,7 +202,7 @@ __builtin_choose_expr(((module_id) == MI_PERF), "MI-PERF",                  \
 __builtin_choose_expr(__builtin_constant_p((module_id)), ___CAM_DBG_MOD_NAME(module_id), \
 	CAM_DBG_MOD_NAME(module_id))
 
-static const char __maybe_unused *cam_debug_tag_name[CAM_TYPE_MAX] = {
+static const char *cam_debug_tag_name[CAM_TYPE_MAX] = {
 	[CAM_TYPE_TRACE] = "CAM_TRACE",
 	[CAM_TYPE_ERR]   = "CAM_ERR",
 	[CAM_TYPE_WARN]  = "CAM_WARN",
@@ -211,7 +228,8 @@ enum cam_log_print_type {
 	CAM_PRINT_BOTH  = 0x3,
 };
 
-#define __CAM_LOG_FMT KERN_INFO "%s: %s: %s: %d: %s "
+#define __CAM_LOG_FMT KERN_INFO "[%llu:%llu:%llu.%llu] %s: %s: %s: %d: %s "
+// #define __CAM_LOG_FMT KERN_INFO "%s: %s: %s: %d: %s "
 
 /**
  * cam_print_log() - function to print logs (internal use only, use macros instead)
@@ -402,6 +420,21 @@ struct camera_debug_settings {
  * @return const struct camera_debug_settings pointer.
  */
 const struct camera_debug_settings *cam_debug_get_settings(void);
+
+/* xiaomi add hw trigger - begin */
+/*
+ *  cam_debug_hw_trigger()
+ *
+ * @brief     :  Debug for hw question.set up this as a hw trigger
+ *               cam_hw_trigger_override[0]= (offset) + value(in schematic diagram)
+ *
+ * @module_id :  Respective Module ID which is calling this function
+ * @status    :  The state value used to determine whether to trigger
+ *
+ * @return    :  If there is no error, it will return 0
+ */
+int cam_debug_hw_trigger(unsigned int module_id, bool status);
+/* xiaomi add hw trigger - end */
 
 /**
  * @brief : API to parse and store input from sysfs debug node

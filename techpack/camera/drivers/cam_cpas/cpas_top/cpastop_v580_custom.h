@@ -1043,7 +1043,7 @@ static struct cam_camnoc_info cam580_custom_camnoc_info = {
 	}
 };
 
-static struct cam_cpas_info __maybe_unused cam580_custom_cpas_info = {
+static struct cam_cpas_info cam580_custom_cpas_info = {
 	.hw_caps_info = {
 		.num_caps_registers = 1,
 		.hw_caps_offsets = {0x8},

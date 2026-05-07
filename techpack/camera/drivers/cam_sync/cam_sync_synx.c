@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include "cam_sync_synx.h"
@@ -810,7 +810,7 @@ void cam_synx_obj_close(void)
 			if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ,
 				&cam_sync_monitor_mask))
 				cam_generic_fence_update_monitor_array(i,
-					NULL,
+					&g_cam_synx_obj_dev->dev_lock,
 					g_cam_synx_obj_dev->monitor_data,
 					CAM_FENCE_OP_UNREGISTER_CB);
 
@@ -822,7 +822,7 @@ void cam_synx_obj_close(void)
 			if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ,
 				&cam_sync_monitor_mask))
 				cam_generic_fence_update_monitor_array(i,
-					NULL,
+					&g_cam_synx_obj_dev->dev_lock,
 					g_cam_synx_obj_dev->monitor_data,
 					CAM_FENCE_OP_SIGNAL);
 
@@ -832,7 +832,7 @@ void cam_synx_obj_close(void)
 		if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ,
 			&cam_sync_monitor_mask))
 			cam_generic_fence_update_monitor_array(i,
-				NULL,
+				&g_cam_synx_obj_dev->dev_lock,
 				g_cam_synx_obj_dev->monitor_data,
 				CAM_FENCE_OP_DESTROY);
 

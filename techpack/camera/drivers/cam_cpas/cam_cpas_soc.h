@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _CAM_CPAS_SOC_H_
@@ -268,7 +268,6 @@ struct cam_cpas_sysfs_info {
  * @num_caches: Number of last level caches
  * @part_info: Camera Hw subpart info
  * @llcc_info: Cache info
- * @enable_secure_qos_update: whether to program QoS securely on current chipset
  * @enable_smart_qos: Whether to enable Smart QoS mechanism on current chipset
  * @enable_cam_ddr_drv: Whether to enable Camera DDR DRV on current chipset
  * @enable_cam_clk_drv: Whether to enable Camera Clk DRV on current chipset
@@ -304,7 +303,6 @@ struct cam_cpas_private_soc {
 	bool enable_smart_qos;
 	bool enable_cam_ddr_drv;
 	bool enable_cam_clk_drv;
-	bool enable_secure_qos_update;
 	struct cam_cpas_smart_qos_info *smart_qos_info;
 	int32_t icp_clk_index;
 	struct cam_cpas_domain_id_info domain_id_info;

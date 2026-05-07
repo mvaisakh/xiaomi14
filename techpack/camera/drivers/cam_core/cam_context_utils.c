@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/debugfs.h>
@@ -253,7 +253,6 @@ int cam_context_buf_done_from_hw(struct cam_context *ctx,
 				ctx->img_iommu_hdl, req->out_map_entries[j].resource_handle);
 			if (rc) {
 				CAM_ERR(CAM_CTXT, "Failed to retrieve image buffers rc:%d", rc);
-				cam_packet_util_put_packet_addr(req->pf_data.packet_handle);
 				return rc;
 			}
 		}
@@ -1856,7 +1855,7 @@ static void __cam_context_req_mini_dump(struct cam_ctx_request *req,
 	if (packet && packet->num_io_configs) {
 		bytes_required = packet->num_io_configs * sizeof(struct cam_buf_io_cfg);
 		if (start_addr + bytes_written + bytes_required > end_addr)
-			goto exit;
+			goto end;
 
 		io_cfg = (struct cam_buf_io_cfg *)((uint32_t *)&packet->payload +
 			packet->io_configs_offset / 4);
@@ -1865,7 +1864,7 @@ static void __cam_context_req_mini_dump(struct cam_ctx_request *req,
 		bytes_written += bytes_required;
 		req_md->num_io_cfg = packet->num_io_configs;
 	}
-exit:
+
 	cam_packet_util_put_packet_addr(req->pf_data.packet_handle);
 end:
 	*bytes_updated = bytes_written;
@@ -1874,17 +1873,16 @@ end:
 static int cam_context_apply_buf_done_err_injection(struct cam_context *ctx,
 	struct cam_common_evt_inject_data *inject_evt)
 {
-	struct cam_hw_done_event_data buf_done_data = {0};
+	struct cam_hw_done_event_data *buf_done_data = inject_evt->buf_done_data;
 	int rc;
 
-	buf_done_data.request_id = inject_evt->evt_params->req_id;
-	buf_done_data.evt_param = inject_evt->evt_params->u.buf_err_evt.sync_error;
-	rc = cam_context_buf_done_from_hw(ctx, &buf_done_data,
+	buf_done_data->evt_param = inject_evt->evt_params->u.buf_err_evt.sync_error;
+	rc = cam_context_buf_done_from_hw(ctx, buf_done_data,
 		CAM_CTX_EVT_ID_ERROR);
 	if (rc)
 		CAM_ERR(CAM_CTXT,
 			"Fail to apply buf done error injection with req id: %llu ctx id: %u rc: %d",
-			buf_done_data.request_id, ctx->ctx_id, rc);
+			buf_done_data->request_id, ctx->ctx_id, rc);
 
 	return rc;
 }

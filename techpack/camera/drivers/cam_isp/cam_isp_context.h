@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _CAM_ISP_CONTEXT_H_
@@ -60,15 +60,15 @@
 #define CAM_ISP_CONTEXT_AEB_ERROR_CNT_MAX 6
 
 /* Debug Buffer length*/
-#define CAM_ISP_CONTEXT_DBG_BUF_LEN 1000
-
-/* AFD pipeline delay for FCG configuration */
-#define CAM_ISP_AFD_PIPELINE_DELAY 3
+#define CAM_ISP_CONTEXT_DBG_BUF_LEN 300
 
 /* Maximum entries in frame record */
 #define CAM_ISP_CTX_MAX_FRAME_RECORDS  5
 
-/* Congestion count threshold */
+
+/*
+ * Congestion count threshold
+ */
 #define CAM_ISP_CONTEXT_CONGESTION_CNT_MAX 3
 
 /* forward declaration */
@@ -103,7 +103,6 @@ enum cam_isp_ctx_event {
 	CAM_ISP_CTX_EVENT_EPOCH,
 	CAM_ISP_CTX_EVENT_RUP,
 	CAM_ISP_CTX_EVENT_BUFDONE,
-	CAM_ISP_CTX_EVENT_SHUTTER,
 	CAM_ISP_CTX_EVENT_MAX
 };
 
@@ -196,7 +195,7 @@ struct cam_isp_ctx_req {
 	uint32_t                              num_fence_map_in;
 	uint32_t                              num_acked;
 	uint32_t                              num_deferred_acks;
-	uint32_t                             *deferred_fence_map_index;
+	uint32_t                  deferred_fence_map_index[CAM_ISP_CTX_RES_MAX];
 	int32_t                               bubble_report;
 	struct cam_isp_prepare_hw_update_data hw_update_data;
 	enum cam_hw_config_reapply_type       reapply_type;
@@ -238,14 +237,6 @@ struct cam_isp_context_req_id_info {
 	int64_t                          last_bufdone_req_id;
 };
 
-struct shutter_event {
-	uint64_t frame_id;
-	uint64_t req_id;
-	uint32_t status;
-	ktime_t  boot_ts;
-	ktime_t  sof_ts;
-};
-
 /**
  *
  *
@@ -257,12 +248,8 @@ struct shutter_event {
  *
  */
 struct cam_isp_context_event_record {
-	uint64_t req_id;
-	ktime_t  timestamp;
-	int event_type;
-	union event {
-		struct shutter_event shutter_event;
-	} event;
+	uint64_t                         req_id;
+	ktime_t                          timestamp;
 };
 
 /**
@@ -313,34 +300,6 @@ struct cam_isp_context_debug_monitors {
 	atomic64_t                            frame_monitor_head;
 	struct cam_isp_context_frame_timing_record frame_monitor[
 		CAM_ISP_CTX_MAX_FRAME_RECORDS];
-};
-
-/**
- * struct cam_isp_skip_frame_info - FIFO Queue for number of skipped frames for
- *                                  the decision of FCG prediction
- * @num_frame_skipped:              Keep track of the number of skipped frames in between
- *                                  of the normal frames
- * @list:                           List member used to append this node to a linked list
- */
-struct cam_isp_skip_frame_info {
-	uint32_t                         num_frame_skipped;
-	struct list_head                 list;
-};
-
-/**
- * struct cam_isp_fcg_prediction_tracker - Track the number of skipped frames before and
- *                                         indicate which FCG prediction should be applied
- *
- * @num_skipped:               Number of skipped frames from previous normally applied frame
- *                             to this normally applied frame
- * @sum_skipped:               Sum of the number of frames from req generation to req apply
- * @skipped_list:              Keep track of the number of skipped frames in between from two
- *                             normal frames
- */
-struct cam_isp_fcg_prediction_tracker {
-	uint32_t                              num_skipped;
-	uint32_t                              sum_skipped;
-	struct list_head                      skipped_list;
 };
 
 /**
@@ -414,11 +373,6 @@ struct cam_isp_fcg_prediction_tracker {
  *                             by other devices on the link as part of link setup
  * @mode_switch_en:            Indicates if mode switch is enabled
  * @hw_idx:                    Hardware ID
- * @fcg_tracker:               FCG prediction tracker containing number of previously skipped
- *                             frames and indicates which prediction should be used
- * @is_shdr:                   true, if usecase is sdhr
- * @is_shdr_master:            Flag to indicate master context in shdr usecase
- * @last_num_exp:              Last num of exposure
  *
  */
 struct cam_isp_context {
@@ -482,10 +436,6 @@ struct cam_isp_context {
 	bool                                  handle_mswitch;
 	bool                                  mode_switch_en;
 	uint32_t                              hw_idx;
-	struct cam_isp_fcg_prediction_tracker fcg_tracker;
-	bool                                  is_tfe_shdr;
-	bool                                  is_shdr_master;
-	uint32_t                              last_num_exp;
 };
 
 /**
@@ -650,5 +600,29 @@ int cam_isp_context_init(struct cam_isp_context *ctx,
  *
  */
 int cam_isp_context_deinit(struct cam_isp_context *ctx);
+
+/*xiaomi added detect framerate begin*/
+/**
+ * cam_isp_detect_framerate()
+ *
+ * @brief                function to detect framerate - xiaomi added
+ *
+ * @ctx:                 ISP context
+ * @interval:            frame interval num to calculate framerate
+ *
+ */
+void cam_isp_detect_framerate(struct cam_isp_context *ctx,
+     uint interval);
+
+/**
+ * @brief                 function to get frame batchsize of HFR - xiaomi add
+ *
+ * @ctx:                  ISP context obj to be detected
+ * @cpkt:                 camera packet
+ *
+ */
+void cam_isp_get_frame_batchsize(struct cam_context *ctx,
+     struct cam_packet *cpkt);
+/*xiaomi added detect framerate end*/
 
 #endif  /* __CAM_ISP_CONTEXT_H__ */

@@ -8,7 +8,7 @@
 
 #include <linux/cma.h>
 #include "cam_ois_dev.h"
-#include "cam_req_mgr_dev.h"
+#include "cam_req_mgr_dev.h" // xiaomi add
 
 #define OIS_NAME_LEN 64
 #define OIS_ENDIANNESS_MASK_FW              0x0F
@@ -53,6 +53,7 @@ void cam_ois_shutdown(struct cam_ois_ctrl_t *o_ctrl);
 
 struct completion *cam_ois_get_i3c_completion(uint32_t index);
 
+/*xiaomi add begin*/
 /**
  * @o_ctrl: OIS ctrl structure
  *
@@ -131,6 +132,6 @@ int cam_ois_flush_request(struct cam_req_mgr_flush_request *flush);
  * Returns success or failure
  */
 int cam_ois_update_req_mgr(struct cam_ois_ctrl_t *o_ctrl, struct cam_packet *csl_packet);
-
+/*xiaomi add end*/
 #endif
 /* _CAM_OIS_CORE_H_ */

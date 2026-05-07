@@ -1481,9 +1481,9 @@ static int cam_sfe_bus_rd_config_rm(void *priv, void *cmd_args,
 				rm_data->common_data->core_index,
 				rm_data->index,
 				img_offset);
-		cam_io_w_mb(img_offset,
-			rm_data->common_data->mem_base +
-			rm_data->hw_regs->addr_cfg);
+			cam_io_w_mb(img_offset,
+				rm_data->common_data->mem_base +
+				rm_data->hw_regs->addr_cfg);
 	}
 
 	return 0;

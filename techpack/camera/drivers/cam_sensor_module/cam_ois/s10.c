@@ -421,6 +421,9 @@ static int s10_ois_apply_calib_settings(struct cam_ois_ctrl_t *o_ctrl,
                             buff[i] = (i2c_list->i2c_settings.reg_setting[j].reg_data);
                             i++;
                         }
+                        trace_cam_i2c_write_log_event("[S10]", o_ctrl->ois_name,
+                            i2c_set->request_id, j, "WRITE", i2c_list->i2c_settings.reg_setting[j].reg_addr,
+                            i2c_list->i2c_settings.reg_setting[j].reg_data);
                     }
                     break;
             }
@@ -498,6 +501,9 @@ static int32_t s10_ois_apply_settings(struct cam_ois_ctrl_t *o_ctrl,
                 CAM_DBG(CAM_OIS, "[S10] ois name  %s, request id %d, j=[%d], reg_addr 0x%x, 0x%x delay %d",o_ctrl->ois_name,
                     i2c_set->request_id, j,i2c_list->i2c_settings.reg_setting[j].reg_addr,
                     i2c_list->i2c_settings.reg_setting[j].reg_data, i2c_list->i2c_settings.reg_setting[j].delay);
+                trace_cam_i2c_write_log_event("[S10]", o_ctrl->ois_name,
+                    i2c_set->request_id, j, "WRITE", i2c_list->i2c_settings.reg_setting[j].reg_addr,
+                    i2c_list->i2c_settings.reg_setting[j].reg_data);
             }
             break;
         }
@@ -506,6 +512,9 @@ static int32_t s10_ois_apply_settings(struct cam_ois_ctrl_t *o_ctrl,
                 if (FLCST_ADDR == (i2c_list->i2c_settings.reg_setting[j].reg_addr)){
                     i2c_list->i2c_settings.reg_setting[j].data_mask = 0xFFFFFFFD;
                 }
+                trace_cam_i2c_write_log_event("[S10]", o_ctrl->ois_name,
+                    i2c_set->request_id, j, "POLL", i2c_list->i2c_settings.reg_setting[j].reg_addr,
+                    i2c_list->i2c_settings.reg_setting[j].reg_data);
             }
             break;
         }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/device.h>
@@ -514,7 +514,7 @@ bus_register_fail:
 	return rc;
 }
 
-int cam_cpas_util_vote_default_ahb_axi(struct cam_hw_info *cpas_hw,
+static int cam_cpas_util_vote_default_ahb_axi(struct cam_hw_info *cpas_hw,
 	int enable)
 {
 	int rc, i = 0;
@@ -983,8 +983,7 @@ static int cam_cpas_apply_smart_qos(
 	struct cam_cpas_tree_node *niu_node;
 	struct cam_camnoc_info *camnoc_info;
 	uint8_t i;
-	int32_t reg_indx, cam_qos_cnt = 0, ret = 0;
-	struct qcom_scm_camera_qos scm_buf[QCOM_SCM_CAMERA_MAX_QOS_CNT] = {0};
+	int32_t reg_indx;
 
 	if (cpas_core->smart_qos_dump) {
 		CAM_INFO(CAM_PERF, "Printing SmartQos values before update");
@@ -999,43 +998,19 @@ static int cam_cpas_apply_smart_qos(
 		niu_node = soc_private->smart_qos_info->rt_wr_niu_node[i];
 
 		if (niu_node->curr_priority_high != niu_node->applied_priority_high) {
-			if (!soc_private->enable_secure_qos_update) {
-				cam_io_w_mb(niu_node->curr_priority_high,
-					soc_info->reg_map[reg_indx].mem_base +
-					niu_node->pri_lut_high_offset);
-			} else {
-				scm_buf[cam_qos_cnt].offset = niu_node->pri_lut_high_offset;
-				scm_buf[cam_qos_cnt].val = niu_node->curr_priority_high;
-				cam_qos_cnt++;
-			}
+			cam_io_w_mb(niu_node->curr_priority_high,
+				soc_info->reg_map[reg_indx].mem_base +
+				niu_node->pri_lut_high_offset);
 
 			niu_node->applied_priority_high = niu_node->curr_priority_high;
 		}
 
 		if (niu_node->curr_priority_low != niu_node->applied_priority_low) {
-			if (!soc_private->enable_secure_qos_update) {
-				cam_io_w_mb(niu_node->curr_priority_low,
-					soc_info->reg_map[reg_indx].mem_base +
-					niu_node->pri_lut_low_offset);
-			} else {
-				scm_buf[cam_qos_cnt].offset = niu_node->pri_lut_low_offset;
-				scm_buf[cam_qos_cnt].val = niu_node->curr_priority_low;
-				cam_qos_cnt++;
-			}
+			cam_io_w_mb(niu_node->curr_priority_low,
+				soc_info->reg_map[reg_indx].mem_base +
+				niu_node->pri_lut_low_offset);
 
 			niu_node->applied_priority_low = niu_node->curr_priority_low;
-		}
-
-		if (soc_private->enable_secure_qos_update && cam_qos_cnt) {
-			CAM_DBG(CAM_PERF, "Updating secure camera smartOos count: %d", cam_qos_cnt);
-			ret = cam_update_camnoc_qos_settings(CAM_QOS_UPDATE_TYPE_SMART,
-				cam_qos_cnt, scm_buf);
-			if (ret) {
-				CAM_ERR(CAM_PERF, "Secure camera smartOos update failed:%d", ret);
-				return ret;
-			}
-			CAM_DBG(CAM_PERF, "Updated secure camera smartOos");
-			cam_qos_cnt = 0;
 		}
 	}
 
@@ -3466,10 +3441,7 @@ static void *cam_cpas_user_dump_state_monitor_array_info(
 	*addr++ = monitor->applied_camnoc_clk.hw_client[2].low,
 	*addr++ = monitor->applied_ahb_level;
 	*addr++ = cpas_core->num_valid_camnoc;
-
-	if (soc_private->enable_smart_qos)
-		*addr++ = soc_private->smart_qos_info->num_rt_wr_nius;
-
+	*addr++ = soc_private->smart_qos_info->num_rt_wr_nius;
 	*addr++ = num_vcds;
 	*addr++ = cpas_core->num_axi_ports;
 
@@ -3516,16 +3488,14 @@ static void *cam_cpas_user_dump_state_monitor_array_info(
 		}
 	}
 
-	if (soc_private->enable_smart_qos) {
-		for (i = 0; i < soc_private->smart_qos_info->num_rt_wr_nius; i++) {
-			niu_node = soc_private->smart_qos_info->rt_wr_niu_node[i];
-			dst = (uint8_t *)addr;
-			hdr = (struct cam_common_hw_dump_header *)dst;
-			scnprintf(hdr->tag, CAM_COMMON_HW_DUMP_TAG_MAX_LEN, "%s:", niu_node->node_name);
-			addr = (uint64_t *)(dst + sizeof(struct cam_common_hw_dump_header));
-			*addr++ = monitor->rt_wr_niu_pri_lut_high[i];
-			*addr++ = monitor->rt_wr_niu_pri_lut_low[i];
-		}
+	for (i = 0; i < soc_private->smart_qos_info->num_rt_wr_nius; i++) {
+		niu_node = soc_private->smart_qos_info->rt_wr_niu_node[i];
+		dst = (uint8_t *)addr;
+		hdr = (struct cam_common_hw_dump_header *)dst;
+		scnprintf(hdr->tag, CAM_COMMON_HW_DUMP_TAG_MAX_LEN, "%s:", niu_node->node_name);
+		addr = (uint64_t *)(dst + sizeof(struct cam_common_hw_dump_header));
+		*addr++ = monitor->rt_wr_niu_pri_lut_high[i];
+		*addr++ = monitor->rt_wr_niu_pri_lut_low[i];
 	}
 
 	vcd_reg_debug_info = &monitor->vcd_reg_debug_info;
@@ -3590,7 +3560,6 @@ static int cam_cpas_dump_state_monitor_array_info(
 	if (buf_len <= dump_info->offset) {
 		CAM_WARN(CAM_CPAS, "Dump buffer overshoot len %zu offset %zu",
 			buf_len, dump_info->offset);
-		cam_mem_put_cpu_buf(dump_info->buf_handle);
 		return -ENOSPC;
 	}
 
@@ -3616,11 +3585,9 @@ static int cam_cpas_dump_state_monitor_array_info(
 				min_len += sizeof(struct cam_common_hw_dump_header);
 		}
 
-		if (soc_private->enable_smart_qos) {
-			for (j = 0; j < soc_private->smart_qos_info->num_rt_wr_nius; j++)
-				min_len += sizeof(struct cam_common_hw_dump_header) +
-					CAM_CPAS_DUMP_NUM_WORDS_RT_WR_NIUS * sizeof(uint64_t);
-		}
+		for (j = 0; j < soc_private->smart_qos_info->num_rt_wr_nius; j++)
+			min_len += sizeof(struct cam_common_hw_dump_header) +
+				CAM_CPAS_DUMP_NUM_WORDS_RT_WR_NIUS * sizeof(uint64_t);
 
 		for (j = 0; j < CAM_CPAS_MAX_CESTA_VCD_NUM; j++)
 			min_len += CAM_CPAS_DUMP_NUM_WORDS_VCD_CURR_LVL * sizeof(uint64_t);
@@ -3631,7 +3598,6 @@ static int cam_cpas_dump_state_monitor_array_info(
 	if (remain_len < min_len) {
 		CAM_WARN(CAM_CPAS, "Dump buffer exhaust remain %zu min %u",
 			remain_len, min_len);
-		cam_mem_put_cpu_buf(dump_info->buf_handle);
 		return -ENOSPC;
 	}
 
@@ -3648,7 +3614,6 @@ static int cam_cpas_dump_state_monitor_array_info(
 			&cpas_core->monitor_entries[index].identifier_string);
 		if (rc) {
 			CAM_ERR(CAM_CPAS, "Dump state info failed, rc: %d", rc);
-			cam_mem_put_cpu_buf(dump_info->buf_handle);
 			return rc;
 		}
 
@@ -3656,7 +3621,6 @@ static int cam_cpas_dump_state_monitor_array_info(
 	}
 
 	dump_info->offset = dump_args.offset;
-	cam_mem_put_cpu_buf(dump_info->buf_handle);
 
 	return rc;
 }
@@ -3695,32 +3659,6 @@ static int cam_cpas_select_qos(struct cam_hw_info *cpas_hw,
 	}
 
 done:
-	mutex_unlock(&cpas_hw->hw_mutex);
-	return rc;
-}
-
-static int cam_cpas_hw_enable_tpg_mux_sel(struct cam_hw_info *cpas_hw,
-	uint32_t tpg_mux)
-{
-	struct cam_cpas *cpas_core = (struct cam_cpas *) cpas_hw->core_info;
-	int rc = 0;
-
-	mutex_lock(&cpas_hw->hw_mutex);
-
-	if (cpas_core->internal_ops.set_tpg_mux_sel) {
-		rc = cpas_core->internal_ops.set_tpg_mux_sel(
-			cpas_hw, tpg_mux);
-		if (rc) {
-			CAM_ERR(CAM_CPAS,
-				"failed in tpg mux selection rc=%d",
-				rc);
-		}
-	} else {
-		CAM_ERR(CAM_CPAS,
-			"CPAS tpg mux sel not enabled");
-		rc = -EINVAL;
-	}
-
 	mutex_unlock(&cpas_hw->hw_mutex);
 	return rc;
 }
@@ -4393,20 +4331,6 @@ static int cam_cpas_hw_process_cmd(void *hw_priv,
 		csid_idx = (uint32_t *)cmd_args;
 		rc = cam_cpas_hw_csid_process_resume(hw_priv, *csid_idx);
 		break;
-	}
-	case CAM_CPAS_HW_CMD_TPG_MUX_SEL: {
-		uint32_t *tpg_mux_sel;
-
-		if (sizeof(uint32_t) != arg_size) {
-			CAM_ERR(CAM_CPAS, "cmd_type %d, size mismatch %d",
-				cmd_type, arg_size);
-			break;
-		}
-
-		tpg_mux_sel = (uint32_t *)cmd_args;
-		rc = cam_cpas_hw_enable_tpg_mux_sel(hw_priv, *tpg_mux_sel);
-		break;
-
 	}
 	case CAM_CPAS_HW_CMD_ENABLE_DISABLE_DOMAIN_ID_CLK: {
 		bool *enable;

@@ -24,7 +24,7 @@
 #define CAM_ISP_BW_CONFIG_V1             1
 #define CAM_ISP_BW_CONFIG_V2             2
 #define CAM_ISP_BW_CONFIG_V3             3
-#define CAM_TFE_HW_NUM_MAX               4
+#define CAM_TFE_HW_NUM_MAX               3
 #define CAM_TFE_RDI_NUM_MAX              3
 #define CAM_IFE_SCRATCH_NUM_MAX          2
 #define CAM_IFE_BUS_COMP_NUM_MAX         18
@@ -33,7 +33,7 @@
 #define CAM_TFE_BUS_COMP_NUM_MAX         18
 
 /* maximum context numbers for TFE */
-#define CAM_TFE_CTX_MAX      6
+#define CAM_TFE_CTX_MAX      4
 
 /* maximum context numbers for IFE */
 #define CAM_IFE_CTX_MAX      8
@@ -49,8 +49,6 @@
 #define CAM_IFE_CTX_SFE_EN             BIT(4)
 #define CAM_IFE_CTX_AEB_EN             BIT(5)
 #define CAM_IFE_CTX_DYNAMIC_SWITCH_EN  BIT(6)
-#define CAM_IFE_CTX_SHDR_EN            BIT(7)
-#define CAM_IFE_CTX_SHDR_IS_MASTER     BIT(8)
 
 /*
  * Maximum configuration entry size  - This is based on the
@@ -64,15 +62,6 @@
  */
 #define CAM_ISP_SFE_CTX_CFG_MAX                 40
 
-/* Maximum number of channels/contexts for FCG modules */
-#define CAM_ISP_MAX_FCG_CH_CTXS        3
-#define CAM_ISP_IFE_MAX_FCG_CH_CTXS    3
-#define CAM_ISP_SFE_MAX_FCG_CHANNELS   2
-
-/* Maximum number of predicitons for FCG config */
-#define CAM_ISP_MAX_FCG_PREDICTIONS       3
-#define CAM_ISP_IFE_MAX_FCG_PREDICTIONS   CAM_ISP_MAX_FCG_PREDICTIONS
-#define CAM_ISP_SFE_MAX_FCG_PREDICTIONS   CAM_ISP_MAX_FCG_PREDICTIONS
 
 /**
  *  enum cam_isp_hw_event_type - Collection of the ISP hardware events
@@ -197,7 +186,7 @@ struct cam_isp_clock_config_internal {
  *
  * @usage_type:                 ife hw index
  * @num_paths:                  Number of data paths
- * @axi_path:                   per path vote info
+ * @axi_path                    per path vote info
  */
 struct cam_isp_bw_config_internal_v2 {
 	uint32_t                               usage_type;
@@ -247,88 +236,6 @@ struct cam_isp_bw_clk_config_info {
 };
 
 /**
- * struct cam_isp_predict_fcg_config_internal - Internal FCG config in a single prediction
- *
- * @phase_index_g:              Starting index of LUT for G channel in phase
- * @phase_index_r:              Starting index of LUT for R channel in phase
- * @phase_index_b:              Starting index of LUT for B channel in phase
- * @stats_index_g:              Starting index of LUT for G channel in stats
- * @stats_index_r:              Starting index of LUT for R channel in stats
- * @stats_index_b:              Starting index of LUT for B channel in stats
- */
-struct cam_isp_predict_fcg_config_internal {
-	uint32_t                                phase_index_g;
-	uint32_t                                phase_index_r;
-	uint32_t                                phase_index_b;
-	uint32_t                                stats_index_g;
-	uint32_t                                stats_index_r;
-	uint32_t                                stats_index_b;
-};
-
-/**
- * struct cam_isp_ch_ctx_fcg_config_internal - Internal FCG config in a single channel or context
- *
- * @fcg_ch_ctx_id:              Index of the channel in SFE/IFE or context in TFE
- *                              to be configured that FCG blocks reside on.
- *                              For example, if one wants to config FCG block
- *                              for IFE in ctx 0, this value will be CAM_ISP_FCG_MASK_CH0
- * @fcg_enable_mask:            Indicate which module will be enabled for
- *                              FCG. For example, if one wants to config
- *                              SFE FCG STATS module, CAM_ISP_FCG_ENABLE_STATS
- *                              will be set in mask
- * @predicted_fcg_configs:      FCG config for each prediction of the channel
- *                              in serial order
- */
-struct cam_isp_ch_ctx_fcg_config_internal {
-	uint32_t                                      fcg_ch_ctx_id;
-	uint32_t                                      fcg_enable_mask;
-	struct cam_isp_predict_fcg_config_internal    predicted_fcg_configs[
-							CAM_ISP_MAX_FCG_PREDICTIONS];
-};
-
-/**
- * struct cam_isp_fcg_config_internal - Internal FCG config for a frame
- *
- * @num_ch_ctx:                 Number of channels for FCG config for SFE/IFE or
- *                              number of contexts for FCG config for TFE
- * @num_predictions:            Number of predictions for each channel
- * @num_types:                  Number of types(STATS/PHASE) for FCG config
- * @ch_ctx_fcg_configs:         FCG config for each channel or context
- */
-struct cam_isp_fcg_config_internal {
-	uint32_t                                      num_ch_ctx;
-	uint32_t                                      num_predictions;
-	uint32_t                                      num_types;
-	struct cam_isp_ch_ctx_fcg_config_internal     ch_ctx_fcg_configs[
-							CAM_ISP_MAX_FCG_CH_CTXS];
-};
-
-/**
- * struct cam_isp_fcg_config_info - Track FCG config for further usage in config stage
- *
- * @prediction_idx:            Indicate which exact prediction to be used, decided
- *                             during trying to apply the request
- * @sfe_fcg_entry_idx:         Index for SFE FCG config in hw update entries
- * @sfe_fcg_config:            Internal storage of SFE FCG configurations
- * @ife_fcg_entry_idx:         Index for IFE/MC_TFE FCG config in hw update entries
- * @ife_fcg_config:            Internal storage of IFE/MC_TFE FCG configurations
- * @use_current_cfg:           Indicate whether use current configuration or replace
- *                             the value with FCG predicted ones.
- * @sfe_fcg_online:            Indicate whether SFE FCG handling is online or not
- * @ife_fcg_online:            Indicate whether IFE/MC_TFE FCG handling is online or not
- */
-struct cam_isp_fcg_config_info {
-	uint32_t                                 prediction_idx;
-	uint32_t                                 sfe_fcg_entry_idx;
-	struct cam_isp_fcg_config_internal       sfe_fcg_config;
-	uint32_t                                 ife_fcg_entry_idx;
-	struct cam_isp_fcg_config_internal       ife_fcg_config;
-	bool                                     use_current_cfg;
-	bool                                     sfe_fcg_online;
-	bool                                     ife_fcg_online;
-};
-
-/**
  * struct cam_isp_prepare_hw_update_data - hw prepare data
  *
  * @isp_mgr_ctx:            ISP HW manager Context for current request
@@ -348,9 +255,7 @@ struct cam_isp_fcg_config_info {
  * @packet:                CSL packet from user mode driver
  * @mup_val:               MUP value if configured
  * @num_exp:               Num of exposures
- * @wm_bitmask:            Bitmask of acquired out resource
  * @mup_en:                Flag if dynamic sensor switch is enabled
- * @fcg_info:              Track FCG config for further usage in config stage
  *
  */
 struct cam_isp_prepare_hw_update_data {
@@ -371,9 +276,7 @@ struct cam_isp_prepare_hw_update_data {
 	struct cam_kmd_buf_info               kmd_cmd_buff_info;
 	uint32_t                              mup_val;
 	uint32_t                              num_exp;
-	uint64_t                              wm_bitmask;
 	bool                                  mup_en;
-	struct cam_isp_fcg_config_info        fcg_info;
 };
 
 
@@ -480,7 +383,6 @@ enum cam_isp_hw_mgr_command {
 	CAM_ISP_HW_MGR_GET_SOF_TS,
 	CAM_ISP_HW_MGR_DUMP_STREAM_INFO,
 	CAM_ISP_HW_MGR_GET_BUS_COMP_GROUP,
-	CAM_ISP_HW_MGR_CMD_UPDATE_CLOCK,
 	CAM_ISP_HW_MGR_GET_LAST_CONSUMED_ADDR,
 	CAM_ISP_HW_MGR_CMD_MAX,
 };
@@ -548,21 +450,6 @@ struct cam_isp_lcr_rdi_cfg_args {
 	struct cam_isp_lcr_rdi_config *rdi_lcr_cfg;
 	uint32_t                       ife_src_res_id;
 	bool                           is_init;
-};
-
-
-/**
- * struct cam_isp_mode_switch_data - isp hardware mode update arguments
- *
- * @mup                 Mup value
- * @num_expoures        Number of exposures
- * @mup_en              Flag to indicate if mup is enable
- *
- */
-struct cam_isp_mode_switch_data {
-	uint32_t                      mup;
-	uint32_t                      num_expoures;
-	bool                          mup_en;
 };
 
 /**

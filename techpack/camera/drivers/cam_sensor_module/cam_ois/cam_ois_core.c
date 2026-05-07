@@ -16,7 +16,7 @@
 #include "cam_common_util.h"
 #include "cam_packet_util.h"
 #include "xiaomi_flash_ois.h"
-#include "cam_parklens_thread.h" 
+#include "cam_parklens_thread.h" //xiaomi add
 
 #define CAM_OIS_FW_VERSION_CHECK_MASK 0x1
 
@@ -146,6 +146,13 @@ static int cam_ois_power_up(struct cam_ois_ctrl_t *o_ctrl)
 	struct cam_ois_soc_private             *soc_private;
 	struct cam_sensor_power_ctrl_t         *power_info;
 	struct completion                      *i3c_probe_completion = NULL;
+	struct timespec64                       ts1, ts2; // xiaomi add
+	long                                    microsec = 0; // xiaomi add
+
+	/* xiaomi add begin */
+	CAM_GET_TIMESTAMP(ts1);
+	CAM_DBG(MI_DEBUG, "%s start power_up", o_ctrl->ois_name);
+	/* xiaomi add end */
 
 	soc_private = (struct cam_ois_soc_private *)o_ctrl->soc_info.soc_private;
 	power_info = &soc_private->power_info;
@@ -200,6 +207,12 @@ static int cam_ois_power_up(struct cam_ois_ctrl_t *o_ctrl)
 		CAM_ERR(CAM_OIS, "cci_init failed: rc: %d", rc);
 		goto cci_failure;
 	}
+	/* xiaomi add begin */
+	CAM_GET_TIMESTAMP(ts2);
+	CAM_GET_TIMESTAMP_DIFF_IN_MICRO(ts1, ts2, microsec);
+	CAM_DBG(MI_DEBUG, "%s end power_up, occupy time is: %ld ms",
+		o_ctrl->ois_name, microsec/1000);
+	/* xiaomi add end */
 
 	return rc;
 cci_failure:
@@ -222,6 +235,13 @@ static int cam_ois_power_down(struct cam_ois_ctrl_t *o_ctrl)
 	struct cam_hw_soc_info          *soc_info =
 		&o_ctrl->soc_info;
 	struct cam_ois_soc_private *soc_private;
+	struct timespec64               ts1, ts2; // xiaomi add
+	long                            microsec = 0; // xiaomi add
+
+	/* xiaomi add begin */
+	CAM_GET_TIMESTAMP(ts1);
+	CAM_DBG(MI_DEBUG, "%s start power_down", o_ctrl->ois_name);
+	/* xiaomi add end */
 
 	if (!o_ctrl) {
 		CAM_ERR(CAM_OIS, "failed: o_ctrl %pK", o_ctrl);
@@ -246,6 +266,12 @@ static int cam_ois_power_down(struct cam_ois_ctrl_t *o_ctrl)
 
 	camera_io_release(&o_ctrl->io_master_info);
 	o_ctrl->cam_ois_state = CAM_OIS_ACQUIRE;
+	/* xiaomi add begin */
+	CAM_GET_TIMESTAMP(ts2);
+	CAM_GET_TIMESTAMP_DIFF_IN_MICRO(ts1, ts2, microsec);
+	CAM_DBG(MI_DEBUG, "%s end power_down, occupy time is: %ld ms",
+		o_ctrl->ois_name, microsec/1000);
+	/* xiaomi add end */
 
 	return rc;
 }
@@ -325,6 +351,7 @@ static int cam_ois_apply_settings(struct cam_ois_ctrl_t *o_ctrl,
 	struct i2c_settings_list *i2c_list;
 	int32_t rc = 0;
 	uint32_t i, size;
+	int32_t j = 0; // xiaomi add
 
 	if (o_ctrl == NULL || i2c_set == NULL) {
 		CAM_ERR(CAM_OIS, "Invalid Args");
@@ -338,6 +365,38 @@ static int cam_ois_apply_settings(struct cam_ois_ctrl_t *o_ctrl,
 
 	list_for_each_entry(i2c_list,
 		&(i2c_set->list_head), list) {
+		/* xiaomi add I2C trace begin */
+		switch (i2c_list->op_code) {
+		case CAM_SENSOR_I2C_WRITE_RANDOM:
+		case CAM_SENSOR_I2C_WRITE_BURST:
+		case CAM_SENSOR_I2C_WRITE_SEQ: {
+			for (j = 0;j < i2c_list->i2c_settings.size;j++) {
+				trace_cam_i2c_write_log_event("[OISSETTINGS]", o_ctrl->ois_name,
+					i2c_set->request_id, j, "WRITE", i2c_list->i2c_settings.reg_setting[j].reg_addr,
+					i2c_list->i2c_settings.reg_setting[j].reg_data);
+			}
+			break;
+		}
+		case CAM_SENSOR_I2C_READ_RANDOM:
+		case CAM_SENSOR_I2C_READ_SEQ: {
+			for (j = 0;j < i2c_list->i2c_settings.size;j++) {
+				trace_cam_i2c_write_log_event("[OISSETTINGS]", o_ctrl->ois_name,
+					i2c_set->request_id, j, "READ", i2c_list->i2c_settings.reg_setting[j].reg_addr,
+					i2c_list->i2c_settings.reg_setting[j].reg_data);
+			}
+			break;
+		}
+		case CAM_SENSOR_I2C_POLL: {
+			for (j = 0;j < i2c_list->i2c_settings.size;j++) {
+				trace_cam_i2c_write_log_event("[OISSETTINGS]", o_ctrl->ois_name,
+					i2c_set->request_id, j, "POLL", i2c_list->i2c_settings.reg_setting[j].reg_addr,
+					i2c_list->i2c_settings.reg_setting[j].reg_data);
+			}
+			break;
+		}
+		default:
+			break;
+		} /* xiaomi add I2C trace end */
 		if (i2c_list->op_code ==  CAM_SENSOR_I2C_WRITE_RANDOM) {
 			rc = camera_io_dev_write(&(o_ctrl->io_master_info),
 				&(i2c_list->i2c_settings));
@@ -360,42 +419,43 @@ static int cam_ois_apply_settings(struct cam_ois_ctrl_t *o_ctrl,
 		} else if (i2c_list->op_code == CAM_SENSOR_I2C_POLL) {
 			size = i2c_list->i2c_settings.size;
 			for (i = 0; i < size; i++) {
+				/* xiaomi add begin poll with 4bytes little endian*/
 				if (o_ctrl->opcode.is_littleendian_op){
-						rc = cam_cci_i2c_poll_with_32(o_ctrl->io_master_info.cci_client,
-						i2c_list->i2c_settings.reg_setting[i].reg_addr,
-						i2c_list->i2c_settings.reg_setting[i].reg_data,
-						i2c_list->i2c_settings.reg_setting[i].data_mask,
-						i2c_list->i2c_settings.data_type,
-						i2c_list->i2c_settings.addr_type,
-						i2c_list->i2c_settings.reg_setting[i].delay);
-						if (I2C_COMPARE_MATCH == rc){
-							CAM_DBG(CAM_OIS, "i2c poll addr 0x%x data 0x%x success",
-								i2c_list->i2c_settings.reg_setting[i].reg_addr,
-								i2c_list->i2c_settings.reg_setting[i].reg_data);
-						}
-				} else {
-				rc = camera_io_dev_poll(
-				&(o_ctrl->io_master_info),
-				i2c_list->i2c_settings.reg_setting[i].reg_addr,
-				i2c_list->i2c_settings.reg_setting[i].reg_data,
-				i2c_list->i2c_settings.reg_setting[i].data_mask,
-				i2c_list->i2c_settings.addr_type,
-				i2c_list->i2c_settings.data_type,
-				i2c_list->i2c_settings.reg_setting[i].delay);
+					rc = cam_cci_i2c_poll_with_32(o_ctrl->io_master_info.cci_client,
+					i2c_list->i2c_settings.reg_setting[i].reg_addr,
+					i2c_list->i2c_settings.reg_setting[i].reg_data,
+					i2c_list->i2c_settings.reg_setting[i].data_mask,
+					i2c_list->i2c_settings.data_type,
+					i2c_list->i2c_settings.addr_type,
+					i2c_list->i2c_settings.reg_setting[i].delay);
+					if (I2C_COMPARE_MATCH == rc){
+						CAM_DBG(CAM_OIS, "i2c poll addr 0x%x data 0x%x success",
+							i2c_list->i2c_settings.reg_setting[i].reg_addr,
+							i2c_list->i2c_settings.reg_setting[i].reg_data);
+					}
+				} else {/* xiaomi add end*/
+					rc = camera_io_dev_poll(
+					&(o_ctrl->io_master_info),
+					i2c_list->i2c_settings.reg_setting[i].reg_addr,
+					i2c_list->i2c_settings.reg_setting[i].reg_data,
+					i2c_list->i2c_settings.reg_setting[i].data_mask,
+					i2c_list->i2c_settings.addr_type,
+					i2c_list->i2c_settings.data_type,
+					i2c_list->i2c_settings.reg_setting[i].delay);
+				}
 				if (rc < 0) {
 					CAM_ERR(CAM_OIS,
 						"i2c poll apply setting Fail");
 					return rc;
 				} else if (rc ==  I2C_COMPARE_MISMATCH) {
+					rc = 0; //xiaomi add
 					CAM_ERR(CAM_OIS, "i2c poll mismatch");
-					rc = 0; 
-				} else if (rc == I2C_COMPARE_MATCH){
+				}else if (rc == I2C_COMPARE_MATCH){
 					if (o_ctrl->opcode.fw_addr ==
 						i2c_list->i2c_settings.reg_setting[i].reg_addr)
 						ois_fw_version_set(
 							i2c_list->i2c_settings.reg_setting[i].reg_data,
 							o_ctrl->ois_name);
-					}
 				}
 			}
 		}
@@ -404,6 +464,7 @@ static int cam_ois_apply_settings(struct cam_ois_ctrl_t *o_ctrl,
 	return rc;
 }
 
+//xiaomi add begin
 static int32_t cam_ois_i2c_modes_util(
 		struct camera_io_master *io_master_info,
 		struct i2c_settings_list *i2c_list)
@@ -633,59 +694,59 @@ exit_without_powerdown:
 
 	return 0;
 }
+//xiaomi add end
 
 static int cam_ois_slaveInfo_pkt_parser(struct cam_ois_ctrl_t *o_ctrl,
-    uint32_t *cmd_buf, size_t len)
+	uint32_t *cmd_buf, size_t len)
 {
-    int32_t rc = 0;
-    struct cam_cmd_ois_info *ois_info;
-    int32_t i=0,j=0;
+	int32_t rc = 0;
+	struct cam_cmd_ois_info *ois_info;
+	int32_t i=0,j=0;
 
 	if (!o_ctrl || !cmd_buf || len < sizeof(struct cam_cmd_ois_info)) {
-        CAM_ERR(CAM_OIS, "Invalid Args");
-        return -EINVAL;
-    }
+		CAM_ERR(CAM_OIS, "Invalid Args");
+		return -EINVAL;
+	}
 
-    ois_info = (struct cam_cmd_ois_info *)cmd_buf;
-    if (o_ctrl->io_master_info.master_type == CCI_MASTER) {
-        o_ctrl->io_master_info.cci_client->i2c_freq_mode =
-            ois_info->i2c_freq_mode;
-        o_ctrl->io_master_info.cci_client->sid =
-            ois_info->slave_addr >> 1;
-        o_ctrl->ois_fw_flag = ois_info->ois_fw_flag;
-        o_ctrl->is_ois_calib = ois_info->is_ois_calib;
-
-		strscpy(o_ctrl->ois_name, ois_info->ois_name, sizeof(o_ctrl->ois_name));
-
+	ois_info = (struct cam_cmd_ois_info *)cmd_buf;
+	if (o_ctrl->io_master_info.master_type == CCI_MASTER) {
+		o_ctrl->io_master_info.cci_client->i2c_freq_mode =
+			ois_info->i2c_freq_mode;
+		o_ctrl->io_master_info.cci_client->sid =
+			ois_info->slave_addr >> 1;
+		o_ctrl->ois_fw_flag = ois_info->ois_fw_flag;
+		o_ctrl->is_ois_calib = ois_info->is_ois_calib;
+		memcpy(o_ctrl->ois_name, ois_info->ois_name, OIS_NAME_LEN);
+		o_ctrl->ois_name[OIS_NAME_LEN - 1] = '\0';
 		o_ctrl->io_master_info.cci_client->retries = 3;
-        o_ctrl->io_master_info.cci_client->id_map = 0;
-        o_ctrl->opcode = ois_info->opcode;
-
+		o_ctrl->io_master_info.cci_client->id_map = 0;
+		memcpy(&(o_ctrl->opcode), &(ois_info->opcode),
+			sizeof(struct cam_ois_opcode));
 		CAM_DBG(CAM_OIS, "Slave addr: 0x%x Freq Mode: %d",
-            ois_info->slave_addr, ois_info->i2c_freq_mode);
-    } else if (o_ctrl->io_master_info.master_type == I2C_MASTER) {
-        o_ctrl->io_master_info.client->addr = ois_info->slave_addr;
-        CAM_DBG(CAM_OIS, "Slave addr: 0x%x", ois_info->slave_addr);
-    } else {
-        CAM_ERR(CAM_OIS, "Invalid Master type : %d",
-            o_ctrl->io_master_info.master_type);
-        rc = -EINVAL;
-    }
+			ois_info->slave_addr, ois_info->i2c_freq_mode);
+	} else if (o_ctrl->io_master_info.master_type == I2C_MASTER) {
+		o_ctrl->io_master_info.client->addr = ois_info->slave_addr;
+		CAM_DBG(CAM_OIS, "Slave addr: 0x%x", ois_info->slave_addr);
+	} else {
+		CAM_ERR(CAM_OIS, "Invalid Master type : %d",
+			o_ctrl->io_master_info.master_type);
+		rc = -EINVAL;
+	}
 
-    if ((true == o_ctrl->opcode.fw_mem_store) && (!fw_info))
-    {
-        fw_info = kzalloc(sizeof(struct fw_ctl)*MAX_CAM_COUNT, GFP_KERNEL);
-        if (!fw_info)
-            return -ENOMEM;
+	if ((true == o_ctrl->opcode.fw_mem_store) && (!fw_info))
+	{
+		fw_info = kzalloc(sizeof(struct fw_ctl)*MAX_CAM_COUNT, GFP_KERNEL);
+		if (!fw_info)
+			return -ENOMEM;
 
-        for(j=0 ; j<MAX_CAM_COUNT ; j++)
-            for(i=0 ; i<MAX_FW_COUNT ; i++){
-                fw_info[j].fw_name[i] = kzalloc(sizeof(char)*OIS_NAME_LEN, GFP_KERNEL);
-                if (!fw_info[j].fw_name[i])
-                    return -ENOMEM;
-            }
-    }
-    return rc;
+		for(j=0 ; j<MAX_CAM_COUNT ; j++)
+			for(i=0 ; i<MAX_FW_COUNT ; i++){
+				fw_info[j].fw_name[i] = kzalloc(sizeof(char)*OIS_NAME_LEN, GFP_KERNEL);
+				if (!fw_info[j].fw_name[i])
+					return -ENOMEM;
+			}
+	}
+	return rc;
 }
 
 static const struct firmware *cam_fw_mem_find(struct cam_ois_ctrl_t *o_ctrl, const char *fw_name)
@@ -1079,7 +1140,8 @@ static int cam_ois_fw_download(struct cam_ois_ctrl_t *o_ctrl)
 			}
 			is_need_reload = true;
 		}
-	} else {
+	}
+	else {
 		/* Load FW */
 		rc = request_firmware(&fw, fw_name_prog, dev);
 		if (rc) {
@@ -1102,7 +1164,7 @@ static int cam_ois_fw_download(struct cam_ois_ctrl_t *o_ctrl)
 			CAM_DBG(CAM_OIS, "FW not release");
 		}
 		else {
-		release_firmware(fw);
+			release_firmware(fw);
 		}
 		return -ENOMEM;
 	}
@@ -1141,7 +1203,7 @@ static int cam_ois_fw_download(struct cam_ois_ctrl_t *o_ctrl)
 		CAM_DBG(CAM_OIS, "FW not release");
 	}
 	else {
-	release_firmware(fw);
+		release_firmware(fw);
 	}
 	is_need_reload = false;
 
@@ -1183,7 +1245,7 @@ static int cam_ois_fw_download(struct cam_ois_ctrl_t *o_ctrl)
 			CAM_DBG(CAM_OIS, "FW not release");
 		}
 		else {
-		release_firmware(fw);
+			release_firmware(fw);
 		}
 		return -ENOMEM;
 	}
@@ -1540,735 +1602,762 @@ release_firmware:
  */
 static int cam_ois_pkt_parse(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 {
-    int32_t                         rc = 0;
-    int32_t                         i = 0, j = 0;
-    uint32_t                        total_cmd_buf_in_bytes = 0;
-    struct common_header           *cmm_hdr = NULL;
-    uintptr_t                       generic_ptr;
-    struct cam_control             *ioctl_ctrl = NULL;
-    struct cam_config_dev_cmd       dev_config;
-    struct i2c_settings_array      *i2c_reg_settings = NULL;
-    struct cam_cmd_buf_desc        *cmd_desc = NULL;
-    uintptr_t                       generic_pkt_addr;
-    size_t                          pkt_len;
-    size_t                          remain_len = 0;
-    struct cam_packet              *csl_packet = NULL;
-    size_t                          len_of_buff = 0;
-    uint32_t                       *offset = NULL, *cmd_buf;
-	uint8_t                         config_flag = 0;
-    struct cam_ois_soc_private     *soc_private =
-        (struct cam_ois_soc_private *)o_ctrl->soc_info.soc_private;
-    struct cam_sensor_power_ctrl_t  *power_info = &soc_private->power_info;
+	int32_t                         rc = 0;
+	int32_t                         i = 0;
+	uint32_t                        total_cmd_buf_in_bytes = 0;
+	struct common_header           *cmm_hdr = NULL;
+	uintptr_t                       generic_ptr;
+	struct cam_control             *ioctl_ctrl = NULL;
+	struct cam_config_dev_cmd       dev_config;
+	struct i2c_settings_array      *i2c_reg_settings = NULL;
+	struct cam_cmd_buf_desc        *cmd_desc = NULL;
+	uintptr_t                       generic_pkt_addr;
+	size_t                          pkt_len;
+	size_t                          remain_len = 0;
+	struct cam_packet              *csl_packet = NULL;
+	size_t                          len_of_buff = 0;
+	uint32_t                       *offset = NULL, *cmd_buf;
+	struct cam_ois_soc_private     *soc_private =
+		(struct cam_ois_soc_private *)o_ctrl->soc_info.soc_private;
+	struct cam_sensor_power_ctrl_t  *power_info = &soc_private->power_info;
 	const struct flash_ois_function *ps = pflash_ois;
-    bool    parklens_power_down = true;
-    int32_t parklens_state      = 0;
-    struct i2c_data_settings        *i2c_data = NULL;
+	uint8_t                          config_flag = 0;
+	int32_t                          j = 0;
+	bool    parklens_power_down = true; //xiaomi add
+	int32_t parklens_state      = 0;    //xiaomi add
+	struct timespec64                ts1, ts2; // xiaomi add
+	long                             microsec = 0; // xiaomi add
+	struct i2c_data_settings        *i2c_data = NULL; // xiaomi add
 
-    ioctl_ctrl = (struct cam_control *)arg;
-    if (copy_from_user(&dev_config,
-        u64_to_user_ptr(ioctl_ctrl->handle),
-        sizeof(dev_config)))
-        return -EFAULT;
-    rc = cam_mem_get_cpu_buf(dev_config.packet_handle,
-        &generic_pkt_addr, &pkt_len);
-    if (rc) {
-        CAM_ERR(CAM_OIS,
-            "error in converting command Handle Error: %d", rc);
-        return rc;
-    }
 
-    remain_len = pkt_len;
-    if ((sizeof(struct cam_packet) > pkt_len) ||
-        ((size_t)dev_config.offset >= pkt_len -
-        sizeof(struct cam_packet))) {
-        CAM_ERR(CAM_OIS,
-            "Inval cam_packet strut size: %zu, len_of_buff: %zu",
-             sizeof(struct cam_packet), pkt_len);
-        cam_mem_put_cpu_buf(dev_config.packet_handle);
-        return -EINVAL;
-    }
+	ioctl_ctrl = (struct cam_control *)arg;
+	if (copy_from_user(&dev_config,
+		u64_to_user_ptr(ioctl_ctrl->handle),
+		sizeof(dev_config)))
+		return -EFAULT;
+	rc = cam_mem_get_cpu_buf(dev_config.packet_handle,
+		&generic_pkt_addr, &pkt_len);
+	if (rc) {
+		CAM_ERR(CAM_OIS,
+			"error in converting command Handle Error: %d", rc);
+		return rc;
+	}
 
-    remain_len -= (size_t)dev_config.offset;
-    csl_packet = (struct cam_packet *)
-        (generic_pkt_addr + (uint32_t)dev_config.offset);
+	remain_len = pkt_len;
+	if ((sizeof(struct cam_packet) > pkt_len) ||
+		((size_t)dev_config.offset >= pkt_len -
+		sizeof(struct cam_packet))) {
+		CAM_ERR(CAM_OIS,
+			"Inval cam_packet strut size: %zu, len_of_buff: %zu",
+			 sizeof(struct cam_packet), pkt_len);
+		rc = -EINVAL;
+		goto releasepacket_end;
+	}
 
-    if (cam_packet_util_validate_packet(csl_packet,
-        remain_len)) {
-        CAM_ERR(CAM_OIS, "Invalid packet params");
-        cam_mem_put_cpu_buf(dev_config.packet_handle);
-        return -EINVAL;
-    }
-    CAM_DBG(CAM_OIS, "[CRM-OIS] op_code: %d, cmd buf: %d last_flush_req %llu, request_id %llu",
-        (csl_packet->header.op_code & 0xFFFFFF),
-        csl_packet->num_cmd_buf,
-        o_ctrl->last_flush_req,
-        csl_packet->header.request_id);
+	remain_len -= (size_t)dev_config.offset;
+	csl_packet = (struct cam_packet *)
+		(generic_pkt_addr + (uint32_t)dev_config.offset);
 
-    if (((csl_packet->header.op_code & 0xFFFFFF) != CAM_OIS_PACKET_OPCODE_INIT) &&
-        ((csl_packet->header.op_code & 0xFFFFFF) != CAM_OIS_PACKET_OPCODE_READ) &&
-        csl_packet->header.request_id <= o_ctrl->last_flush_req
-        && o_ctrl->last_flush_req != 0) {
-        CAM_ERR(CAM_OIS,
-            "[CRM-OIS] reject request %llu, last request to flush %llu opcode %d",
-            csl_packet->header.request_id, o_ctrl->last_flush_req,
-            (csl_packet->header.op_code & 0xFFFFFF));
-        rc = -EBADR;
-        goto releasepacket_end;
-    }
+	if (cam_packet_util_validate_packet(csl_packet,
+		remain_len)) {
+		CAM_ERR(CAM_OIS, "Invalid packet params");
+		rc = -EINVAL;
+		goto releasepacket_end;
+	}
 
-    if (csl_packet->header.request_id > o_ctrl->last_flush_req){
-        o_ctrl->last_flush_req = 0;
-    }
+	// xiaomi add begin
+	CAM_DBG(CAM_OIS, "[CRM-OIS] op_code: %d, cmd buf: %d last_flush_req %llu, request_id %llu",
+		(csl_packet->header.op_code & 0xFFFFFF),
+		csl_packet->num_cmd_buf,
+		o_ctrl->last_flush_req,
+		csl_packet->header.request_id);
 
-    switch (csl_packet->header.op_code & 0xFFFFFF) {
-    case CAM_OIS_PACKET_OPCODE_INIT:
-        CAM_DBG(CAM_OIS, "CAM_OIS_PACKET_OPCODE_INIT,num_cmd_buf %d",
-            csl_packet->num_cmd_buf);
+	if (((csl_packet->header.op_code & 0xFFFFFF) != CAM_OIS_PACKET_OPCODE_INIT) &&
+		((csl_packet->header.op_code & 0xFFFFFF) != CAM_OIS_PACKET_OPCODE_READ) &&
+		csl_packet->header.request_id <= o_ctrl->last_flush_req
+		&& o_ctrl->last_flush_req != 0) {
+		CAM_ERR(CAM_OIS,
+			"[CRM-OIS] reject request %llu, last request to flush %llu opcode %d",
+			csl_packet->header.request_id, o_ctrl->last_flush_req,
+			(csl_packet->header.op_code & 0xFFFFFF));
+		rc = -EBADR;
+		goto releasepacket_end;
+	}
 
-        offset = (uint32_t *)&csl_packet->payload;
-        offset += (csl_packet->cmd_buf_offset / sizeof(uint32_t));
-        cmd_desc = (struct cam_cmd_buf_desc *)(offset);
+	if (csl_packet->header.request_id > o_ctrl->last_flush_req){
+		o_ctrl->last_flush_req = 0;
+	}
+	// xiaomi add end
 
-        /* Loop through multiple command buffers */
-        for (i = 0; i < csl_packet->num_cmd_buf; i++) {
-            rc = cam_packet_util_validate_cmd_desc(&cmd_desc[i]);
-            if (rc)
-                return rc;
+	switch (csl_packet->header.op_code & 0xFFFFFF) {
+	case CAM_OIS_PACKET_OPCODE_INIT:
+		CAM_DBG(CAM_OIS, "CAM_OIS_PACKET_OPCODE_INIT,num_cmd_buf %d",
+			csl_packet->num_cmd_buf);
 
-            total_cmd_buf_in_bytes = cmd_desc[i].length;
-            if (!total_cmd_buf_in_bytes)
-                continue;
+		offset = (uint32_t *)&csl_packet->payload;
+		offset += (csl_packet->cmd_buf_offset / sizeof(uint32_t));
+		cmd_desc = (struct cam_cmd_buf_desc *)(offset);
 
-            rc = cam_mem_get_cpu_buf(cmd_desc[i].mem_handle,
-                &generic_ptr, &len_of_buff);
-            if (rc < 0) {
-                CAM_ERR(CAM_OIS, "Failed to get cpu buf : 0x%x",
-                    cmd_desc[i].mem_handle);
-                cam_mem_put_cpu_buf(dev_config.packet_handle);
-                return rc;
-            }
-            cmd_buf = (uint32_t *)generic_ptr;
-            if (!cmd_buf) {
-                CAM_ERR(CAM_OIS, "invalid cmd buf");
-                cam_mem_put_cpu_buf(cmd_desc[i].mem_handle);
-                cam_mem_put_cpu_buf(dev_config.packet_handle);
-                return -EINVAL;
-            }
+		/* Loop through multiple command buffers */
+		for (i = 0; i < csl_packet->num_cmd_buf; i++) {
+			total_cmd_buf_in_bytes = cmd_desc[i].length;
+			if (!total_cmd_buf_in_bytes)
+				continue;
 
-            if ((len_of_buff < sizeof(struct common_header)) ||
-                (cmd_desc[i].offset > (len_of_buff -
-                sizeof(struct common_header)))) {
-                CAM_ERR(CAM_OIS,
-                    "Invalid length for sensor cmd");
-                cam_mem_put_cpu_buf(cmd_desc[i].mem_handle);
-                cam_mem_put_cpu_buf(dev_config.packet_handle);
-                return -EINVAL;
-            }
-            remain_len = len_of_buff - cmd_desc[i].offset;
-            cmd_buf += cmd_desc[i].offset / sizeof(uint32_t);
-            cmm_hdr = (struct common_header *)cmd_buf;
+			rc = cam_mem_get_cpu_buf(cmd_desc[i].mem_handle,
+				&generic_ptr, &len_of_buff);
+			if (rc < 0) {
+				CAM_ERR(CAM_OIS, "Failed to get cpu buf : 0x%x",
+					cmd_desc[i].mem_handle);
+				goto releasepacket_end;
+			}
+			cmd_buf = (uint32_t *)generic_ptr;
+			if (!cmd_buf) {
+				CAM_ERR(CAM_OIS, "invalid cmd buf");
+				rc = -EINVAL;
+				goto releasemem_end;
+			}
 
-            CAM_DBG(CAM_OIS,
-                    "cmm_hdr->cmd_type: %d", cmm_hdr->cmd_type);
-            switch (cmm_hdr->cmd_type) {
-            case CAMERA_SENSOR_CMD_TYPE_I2C_INFO:
-                rc = cam_ois_slaveInfo_pkt_parser(
-                    o_ctrl, cmd_buf, remain_len);
-                if (rc < 0) {
-                    CAM_ERR(CAM_OIS,
-                    "Failed in parsing slave info");
-                    cam_mem_put_cpu_buf(cmd_desc[i].mem_handle);
-                    cam_mem_put_cpu_buf(dev_config.packet_handle);
-                    return rc;
-                }
-                break;
-            case CAMERA_SENSOR_CMD_TYPE_PWR_UP:
-            case CAMERA_SENSOR_CMD_TYPE_PWR_DOWN:
-                CAM_DBG(CAM_OIS,
-                    "Received power settings buffer");
-                if (PARKLENS_INVALID != parklens_atomic_read(&(o_ctrl->parklens_ctrl.parklens_state))) {
-                    ois_parklens_thread_stop(o_ctrl, EXIT_PARKLENS_WITHOUT_POWERDOWN);
-                    parklens_power_down = ois_parklens_power_down(o_ctrl);
+			if ((len_of_buff < sizeof(struct common_header)) ||
+				(cmd_desc[i].offset > (len_of_buff -
+				sizeof(struct common_header)))) {
+				CAM_ERR(CAM_OIS,
+					"Invalid length for sensor cmd");
+				rc = -EINVAL;
+				goto releasemem_end;
+			}
+			remain_len = len_of_buff - cmd_desc[i].offset;
+			cmd_buf += cmd_desc[i].offset / sizeof(uint32_t);
+			cmm_hdr = (struct common_header *)cmd_buf;
 
-                    // Set the last few Settings, Ensure that the ois state is normal
-                    if(parklens_power_down == false){
-                        CAM_INFO(MI_PARKLENS, "[OISParklensLog] May be need reset OIS");
-                    }
-                    ois_deinit_parklens_info(o_ctrl);
-                    CAM_DBG(MI_PARKLENS, "[OISParklensLog] stop parklens thread, powerdown:%d",
-                        parklens_power_down);
-                } else {
-                    CAM_DBG(MI_PARKLENS, "[OISParklensLog] parklens thread is invalid, powerdown:%d",
-                        parklens_power_down);
-                }
-                rc = cam_sensor_update_power_settings(
-                    cmd_buf,
-                    total_cmd_buf_in_bytes,
-                    power_info, remain_len);
-                if (rc) {
-                    CAM_ERR(CAM_OIS,
-                    "Failed: parse power settings");
-                    cam_mem_put_cpu_buf(cmd_desc[i].mem_handle);
-                    cam_mem_put_cpu_buf(dev_config.packet_handle);
-                    return rc;
-                }
-                break;
-            case CAMERA_SENSOR_OIS_CMD_TYPE_FW_INFO:
-                CAM_DBG(CAM_OIS,
-                    "Received fwInfo buffer,total_cmd_buf_in_bytes: %d",
-                    total_cmd_buf_in_bytes);
-                rc = cam_ois_fw_info_pkt_parser(
-                    o_ctrl, cmd_buf, total_cmd_buf_in_bytes);
-                if (rc) {
-                    CAM_ERR(CAM_OIS,
-                    "Failed: parse fw info settings");
-                    cam_mem_put_cpu_buf(cmd_desc[i].mem_handle);
-                    cam_mem_put_cpu_buf(dev_config.packet_handle);
-                    return rc;
-                }
-                break;
-            default:
-                if (o_ctrl->i2c_init_data.is_settings_valid == 0) {
-                    CAM_DBG(CAM_OIS,
-                    "Received init/config settings");
-                    i2c_reg_settings =
-                        &(o_ctrl->i2c_init_data);
-                    i2c_reg_settings->is_settings_valid = 1;
-                    i2c_reg_settings->request_id = 0;
-                    rc = cam_sensor_i2c_command_parser(
-                        &o_ctrl->io_master_info,
-                        i2c_reg_settings,
-                        &cmd_desc[i], 1, NULL);
-                    if (rc < 0) {
-                        CAM_ERR(CAM_OIS,
-                        "init parsing failed: %d", rc);
-                        cam_mem_put_cpu_buf(cmd_desc[i].mem_handle);
-                        cam_mem_put_cpu_buf(dev_config.packet_handle);
-                        return rc;
-                    }
-                } else if ((o_ctrl->is_ois_calib != 0) &&
-                    (o_ctrl->i2c_calib_data.is_settings_valid ==
-                    0)) {
-                    CAM_DBG(CAM_OIS,
-                        "Received calib settings");
-                    i2c_reg_settings = &(o_ctrl->i2c_calib_data);
-                    i2c_reg_settings->is_settings_valid = 1;
-                    i2c_reg_settings->request_id = 0;
-                    rc = cam_sensor_i2c_command_parser(
-                        &o_ctrl->io_master_info,
-                        i2c_reg_settings,
-                        &cmd_desc[i], 1, NULL);
-                    if (rc < 0) {
-                        CAM_ERR(CAM_OIS,
-                            "Calib parsing failed: %d", rc);
-                        cam_mem_put_cpu_buf(cmd_desc[i].mem_handle);
-                        cam_mem_put_cpu_buf(dev_config.packet_handle);
-                        return rc;
-                    }
-                } else if (o_ctrl->i2c_fwinit_data.is_settings_valid == 0) {
-                    CAM_DBG(CAM_OIS, "received fwinit settings");
-                    i2c_reg_settings =
-                        &(o_ctrl->i2c_fwinit_data);
-                    i2c_reg_settings->is_settings_valid = 1;
-                    i2c_reg_settings->request_id = 0;
-                    rc = cam_sensor_i2c_command_parser(
-                        &o_ctrl->io_master_info,
-                        i2c_reg_settings,
-                        &cmd_desc[i], 1, NULL);
-                    if (rc < 0) {
-                        CAM_DBG(CAM_OIS,
-                        "fw init parsing failed: %d", rc);
-                    }
-                }
-                break;
-            }
-            cam_mem_put_cpu_buf(cmd_desc[i].mem_handle);
-        }
+			CAM_DBG(CAM_OIS,
+					"cmm_hdr->cmd_type: %d", cmm_hdr->cmd_type);
+			switch (cmm_hdr->cmd_type) {
+			case CAMERA_SENSOR_CMD_TYPE_I2C_INFO:
+				rc = cam_ois_slaveInfo_pkt_parser(
+					o_ctrl, cmd_buf, remain_len);
+				if (rc < 0) {
+					CAM_ERR(CAM_OIS,
+					"Failed in parsing slave info");
+					goto releasemem_end;
+				}
+				break;
+			case CAMERA_SENSOR_CMD_TYPE_PWR_UP:
+			case CAMERA_SENSOR_CMD_TYPE_PWR_DOWN:
+				CAM_DBG(CAM_OIS,
+					"Received power settings buffer");
+				// xiaomi modify begin
+				if (PARKLENS_INVALID != parklens_atomic_read(&(o_ctrl->parklens_ctrl.parklens_state))) {
+					ois_parklens_thread_stop(o_ctrl, EXIT_PARKLENS_WITHOUT_POWERDOWN);
+					parklens_power_down = ois_parklens_power_down(o_ctrl);
 
-        if (o_ctrl->cam_ois_state != CAM_OIS_CONFIG) {
-            rc = cam_ois_power_up(o_ctrl);
-            if (rc) {
-                CAM_ERR(CAM_OIS, " OIS Power up failed");
-                cam_mem_put_cpu_buf(dev_config.packet_handle);
-                return rc;
-            }
-        }
+					// Set the last few Settings, Ensure that the ois state is normal
+					if(parklens_power_down == false){
+						CAM_INFO(MI_PARKLENS, "[OISParklensLog] May be need reset OIS");
+					}
+					ois_deinit_parklens_info(o_ctrl);
+					CAM_DBG(MI_PARKLENS, "[OISParklensLog] stop parklens thread, powerdown:%d",
+						parklens_power_down);
+				} else {
+					CAM_DBG(MI_PARKLENS, "[OISParklensLog] parklens thread is invalid, powerdown:%d",
+						parklens_power_down);
+				}
 
-        CAM_DBG(CAM_OIS, "ois_fw_flag: %d", o_ctrl->ois_fw_flag);
-        if (o_ctrl->opcode.customized_ois_flag) {
-            for(j = 0; j < sizeof(pflash_ois) / sizeof(struct flash_ois_function) ; j++){
-                if(ps[j].flag == o_ctrl->opcode.customized_ois_flag){
-                    config_flag++;
-                    rc = ps[j].mi_ois_pkt_download(o_ctrl);
-                    if (rc) {
-                        CAM_ERR(CAM_OIS, "Failed OIS Customer Pkt Download");
-                        goto pwr_dwn;
-                    }
-                    o_ctrl->cam_ois_state = CAM_OIS_CONFIG;
-                    CAM_INFO(CAM_OIS, "%s use flash_ois_function %d",
-                            o_ctrl->ois_name, j);
-                    break;
-                }
-            }
-            if (1 != config_flag) {
-                CAM_ERR(CAM_OIS, "ERROR! need  pkt function, flag %d", config_flag);
-            }
-        } else {
-            if (o_ctrl->ois_fw_flag) {
-                CAM_DBG(CAM_OIS, "fw_count: %d", o_ctrl->fw_info.fw_count);
-                if (o_ctrl->fw_info.fw_count != 0) {
-                    rc = cam_ois_fw_download_v2(o_ctrl);
-                    if (rc) {
-                        CAM_ERR(CAM_OIS, "Failed OIS FW Download v2");
-                        goto pwr_dwn;
-                    }
-                } else {
-                    if (o_ctrl->i2c_fwinit_data.is_settings_valid == 1) {
-                        rc = cam_ois_apply_settings(o_ctrl,
-                            &o_ctrl->i2c_fwinit_data);
-                        if ((rc == -EAGAIN) &&
-                            (o_ctrl->io_master_info.master_type ==
-                                CCI_MASTER)) {
-                            CAM_WARN(CAM_OIS,
-                                "Reapplying fwinit settings");
-                            usleep_range(1000, 1010);
-                            rc = cam_ois_apply_settings(o_ctrl,
-                                &o_ctrl->i2c_fwinit_data);
-                        }
-                        if (rc) {
-                            CAM_ERR(CAM_OIS,
-                                "Cannot apply fwinit data %d",
-                                rc);
-                            goto pwr_dwn;
-                        } else {
-                            CAM_DBG(CAM_OIS, "OIS fwinit settings success");
-                        }
+				if(parklens_power_down == true) {
+				 	CAM_DBG(MI_PARKLENS, "[OISParklensLog] need power up again");
+					rc = cam_sensor_update_power_settings(
+							cmd_buf,
+							total_cmd_buf_in_bytes,
+							power_info, remain_len);
+					CAM_DBG(MI_PARKLENS, "[OISParklensLog] power up again successed");
+					if (rc) {
+						CAM_ERR(MI_PARKLENS, "[OISParklensLog] Failed:parse power settings: %d",
+							rc);
+						goto releasemem_end;
+					}
+				} else {
+					CAM_INFO(MI_PARKLENS, "[OISParklensLog] no need repower up again");
+				}
+				// xiaomi modify end
+				break;
+			case CAMERA_SENSOR_OIS_CMD_TYPE_FW_INFO:
+				CAM_DBG(CAM_OIS,
+					"Received fwInfo buffer,total_cmd_buf_in_bytes: %d",
+					total_cmd_buf_in_bytes);
+				rc = cam_ois_fw_info_pkt_parser(
+					o_ctrl, cmd_buf, total_cmd_buf_in_bytes);
+				if (rc) {
+					CAM_ERR(CAM_OIS,
+					"Failed: parse fw info settings");
+					goto releasemem_end;
+				}
+				break;
+			default:
+			if (o_ctrl->i2c_init_data.is_settings_valid == 0) {
+				CAM_DBG(CAM_OIS,
+				"Received init/config settings");
+				i2c_reg_settings =
+					&(o_ctrl->i2c_init_data);
+				i2c_reg_settings->is_settings_valid = 1;
+				i2c_reg_settings->request_id = 0;
+				rc = cam_sensor_i2c_command_parser(
+					&o_ctrl->io_master_info,
+					i2c_reg_settings,
+					&cmd_desc[i], 1, NULL);
+				if (rc < 0) {
+					CAM_ERR(CAM_OIS,
+					"init parsing failed: %d", rc);
+					goto releasemem_end;
+				}
+			} else if ((o_ctrl->is_ois_calib != 0) &&
+				(o_ctrl->i2c_calib_data.is_settings_valid ==
+				0)) {
+				CAM_DBG(CAM_OIS,
+					"Received calib settings");
+				i2c_reg_settings = &(o_ctrl->i2c_calib_data);
+				i2c_reg_settings->is_settings_valid = 1;
+				i2c_reg_settings->request_id = 0;
+				rc = cam_sensor_i2c_command_parser(
+					&o_ctrl->io_master_info,
+					i2c_reg_settings,
+					&cmd_desc[i], 1, NULL);
+				if (rc < 0) {
+					CAM_ERR(CAM_OIS,
+						"Calib parsing failed: %d", rc);
+					goto releasemem_end;
+				}
+			} else if (o_ctrl->i2c_fwinit_data.is_settings_valid == 0) {
+				CAM_DBG(CAM_OIS, "received fwinit settings");
+				i2c_reg_settings =
+					&(o_ctrl->i2c_fwinit_data);
+				i2c_reg_settings->is_settings_valid = 1;
+				i2c_reg_settings->request_id = 0;
+				rc = cam_sensor_i2c_command_parser(
+					&o_ctrl->io_master_info,
+					i2c_reg_settings,
+					&cmd_desc[i], 1, NULL);
+				if (rc < 0) {
+					CAM_DBG(CAM_OIS,
+					"fw init parsing failed: %d", rc);
+				}
+			} else if (o_ctrl->i2c_postinit_data.is_settings_valid == 0) {
+				CAM_DBG(CAM_OIS, "received postinit settings");
+				i2c_reg_settings =
+					&(o_ctrl->i2c_postinit_data);
+				i2c_reg_settings->is_settings_valid = 1;
+				i2c_reg_settings->request_id = 0;
+				rc = cam_sensor_i2c_command_parser(
+					&o_ctrl->io_master_info,
+					i2c_reg_settings,
+					&cmd_desc[i], 1, NULL);
+				if (rc < 0) {
+					CAM_ERR(CAM_OIS,
+					"post init parsing failed: %d", rc);
+					goto releasemem_end;
+				}
+			}
+			break;
+			}
+			cam_mem_put_cpu_buf(cmd_desc[i].mem_handle);
+		}
 
-                        rc = cam_ois_fw_download(o_ctrl);
-                        if (rc) {
-                            CAM_ERR(CAM_OIS, "Failed OIS FW Download");
-                            goto pwr_dwn;
-                        }
-                    }
-                }
-            }
+		if (o_ctrl->cam_ois_state != CAM_OIS_CONFIG) {
+			// xiaomi modify begin
+			if (parklens_power_down == true) {
+				CAM_DBG(MI_PARKLENS, "[OISParklensLog] OIS Power up start");
+				rc = cam_ois_power_up(o_ctrl);
+				if (rc) {
+					CAM_ERR(MI_PARKLENS, "[OISParklensLog] OIS Power up failed");
+					goto releasepacket_end;
+				}
+			}
+			// xiaomi modify end
+		}
 
-            rc = cam_ois_apply_settings(o_ctrl, &o_ctrl->i2c_init_data);
-            if ((rc == -EAGAIN) &&
-                (o_ctrl->io_master_info.master_type == CCI_MASTER)) {
-                CAM_WARN(CAM_OIS,
-                    "CCI HW is restting: Reapplying INIT settings");
-                usleep_range(1000, 1010);
-                rc = cam_ois_apply_settings(o_ctrl,
-                    &o_ctrl->i2c_init_data);
-            }
+		CAM_DBG(CAM_OIS, "ois_fw_flag: %d, customized_ois_flag %d",
+				o_ctrl->ois_fw_flag, o_ctrl->opcode.customized_ois_flag);
+		/* xiaomi add begin, interface for different ois add by xiaomi*/
+		if (o_ctrl->opcode.customized_ois_flag) {
+			for(j = 0; j < sizeof(pflash_ois) / sizeof(struct flash_ois_function) ; j++){
+				if(ps[j].flag == o_ctrl->opcode.customized_ois_flag){
+					config_flag++;
+					rc = ps[j].mi_ois_pkt_download(o_ctrl);
+					if (rc) {
+						CAM_ERR(CAM_OIS, "Failed OIS Customer Pkt Download");
+						goto pwr_dwn;
+					}
+					o_ctrl->cam_ois_state = CAM_OIS_CONFIG;
+					CAM_INFO(CAM_OIS, "%s use flash_ois_function %d",
+							o_ctrl->ois_name, j);
+					break;
+				}
+			}
+			if (1 != config_flag) {
+				CAM_ERR(CAM_OIS, "ERROR! need  pkt function, flag %d", config_flag);
+			}
+		/* xiaomi add end*/
+		} else {
+			if (o_ctrl->ois_fw_flag) {
+				CAM_DBG(CAM_OIS, "fw_count: %d", o_ctrl->fw_info.fw_count);
+				if (o_ctrl->fw_info.fw_count != 0) {
+					/* xiaomi add begin */
+					CAM_GET_TIMESTAMP(ts1);
+					CAM_DBG(MI_PERF, "%s start firmware download", o_ctrl->ois_name);
+					/* xiaomi add end */
+					rc = cam_ois_fw_download_v2(o_ctrl);
+					if (rc) {
+						CAM_ERR(CAM_OIS, "Failed OIS FW Download v2");
+						goto pwr_dwn;
+					}
+					/* xiaomi add begin */
+					CAM_GET_TIMESTAMP(ts2);
+					CAM_GET_TIMESTAMP_DIFF_IN_MICRO(ts1, ts2, microsec);
+					CAM_DBG(MI_PERF, "%s end firmware download, occupy time is: %ld ms",
+						o_ctrl->ois_name, microsec/1000);
+					/* xiaomi add end */
+				} else {
+					if (o_ctrl->i2c_fwinit_data.is_settings_valid == 1) {
+						rc = cam_ois_apply_settings(o_ctrl,
+							&o_ctrl->i2c_fwinit_data);
+						if ((rc == -EAGAIN) &&
+							(o_ctrl->io_master_info.master_type ==
+								CCI_MASTER)) {
+							CAM_WARN(CAM_OIS,
+								"Reapplying fwinit settings");
+							usleep_range(1000, 1010);
+							rc = cam_ois_apply_settings(o_ctrl,
+								&o_ctrl->i2c_fwinit_data);
+						}
+						if (rc) {
+							CAM_ERR(CAM_OIS,
+								"Cannot apply fwinit data %d",
+								rc);
+							goto pwr_dwn;
+						} else {
+							CAM_DBG(CAM_OIS, "OIS fwinit settings success");
+						}
+						/* xiaomi add begin */
+						CAM_GET_TIMESTAMP(ts1);
+						CAM_DBG(MI_PERF, "%s start firmware download", o_ctrl->ois_name);
+						/* xiaomi add end */
+						rc = cam_ois_fw_download(o_ctrl);
+						if (rc) {
+							CAM_ERR(CAM_OIS, "Failed OIS FW Download");
+							goto pwr_dwn;
+						}
+						/* xiaomi add begin */
+						CAM_GET_TIMESTAMP(ts2);
+						CAM_GET_TIMESTAMP_DIFF_IN_MICRO(ts1, ts2, microsec);
+						CAM_DBG(MI_PERF, "%s end firmware download, occupy time is: %ld ms",
+							o_ctrl->ois_name, microsec/1000);
+						/* xiaomi add end */
+					}
+				}
+			}
 
-            if (rc < 0) {
-                CAM_ERR(CAM_OIS,
-                    "Cannot apply Init settings: rc = %d",
-                    rc);
-                goto pwr_dwn;
-            } else {
-                CAM_DBG(CAM_OIS, "apply Init settings success");
-            }
+			rc = cam_ois_apply_settings(o_ctrl, &o_ctrl->i2c_init_data);
+			if ((rc == -EAGAIN) &&
+				(o_ctrl->io_master_info.master_type == CCI_MASTER)) {
+				CAM_WARN(CAM_OIS,
+					"CCI HW is restting: Reapplying INIT settings");
+				usleep_range(1000, 1010);
+				rc = cam_ois_apply_settings(o_ctrl,
+					&o_ctrl->i2c_init_data);
+			}
 
-            if (o_ctrl->is_ois_calib) {
-                rc = cam_ois_apply_settings(o_ctrl,
-                    &o_ctrl->i2c_calib_data);
-                if ((rc == -EAGAIN) &&
-                    (o_ctrl->io_master_info.master_type == CCI_MASTER)) {
-                    CAM_WARN(CAM_OIS,
-                        "CCI HW is restting: Reapplying calib settings");
-                    usleep_range(1000, 1010);
-                    rc = cam_ois_apply_settings(o_ctrl,
-                        &o_ctrl->i2c_calib_data);
-                }
-                if (rc) {
-                    CAM_ERR(CAM_OIS, "Cannot apply calib data");
-                    goto pwr_dwn;
-                } else {
-                    CAM_DBG(CAM_OIS, "apply calib data settings success");
-                }
-            }
+			if (rc < 0) {
+				CAM_ERR(CAM_OIS,
+					"Cannot apply Init settings: rc = %d",
+					rc);
+				goto pwr_dwn;
+			} else {
+				CAM_DBG(CAM_OIS, "apply Init settings success");
+			}
 
-            o_ctrl->cam_ois_state = CAM_OIS_CONFIG;
+			if (o_ctrl->is_ois_calib) {
+				rc = cam_ois_apply_settings(o_ctrl,
+					&o_ctrl->i2c_calib_data);
+				if ((rc == -EAGAIN) &&
+					(o_ctrl->io_master_info.master_type == CCI_MASTER)) {
+					CAM_WARN(CAM_OIS,
+						"CCI HW is restting: Reapplying calib settings");
+					usleep_range(1000, 1010);
+					rc = cam_ois_apply_settings(o_ctrl,
+						&o_ctrl->i2c_calib_data);
+				}
+				if (rc) {
+					CAM_ERR(CAM_OIS, "Cannot apply calib data");
+					goto pwr_dwn;
+				} else {
+					CAM_DBG(CAM_OIS, "apply calib data settings success");
+				}
+			}
 
-            rc = delete_request(&o_ctrl->i2c_fwinit_data);
-            if (rc < 0) {
-                CAM_WARN(CAM_OIS,
-                    "Fail deleting fwinit data: rc: %d", rc);
-                rc = 0;
-            }
+			o_ctrl->cam_ois_state = CAM_OIS_CONFIG;
 
-            for (i = 0; i < MAX_OIS_FW_COUNT; i++) {
-                if (o_ctrl->i2c_fw_init_data[i].is_settings_valid == 1) {
-                    rc = delete_request(&o_ctrl->i2c_fw_init_data[i]);
-                    if (rc < 0) {
-                        CAM_WARN(CAM_OIS,
-                            "Fail deleting i2c_fw_init_data: rc: %d", rc);
-                        rc = 0;
-                    }
-                }
-                if (o_ctrl->i2c_fw_finalize_data[i].is_settings_valid == 1) {
-                    rc = delete_request(&o_ctrl->i2c_fw_finalize_data[i]);
-                    if (rc < 0) {
-                        CAM_WARN(CAM_OIS,
-                            "Fail deleting i2c_fw_finalize_data: rc: %d", rc);
-                        rc = 0;
-                    }
-                }
-            }
+			for (i = 0; i < MAX_OIS_FW_COUNT; i++) {
+				if (o_ctrl->i2c_fw_init_data[i].is_settings_valid == 1) {
+					rc = delete_request(&o_ctrl->i2c_fw_init_data[i]);
+					if (rc < 0) {
+						CAM_WARN(CAM_OIS,
+							"Fail deleting i2c_fw_init_data: rc: %d", rc);
+						rc = 0;
+					}
+				}
+				if (o_ctrl->i2c_fw_finalize_data[i].is_settings_valid == 1) {
+					rc = delete_request(&o_ctrl->i2c_fw_finalize_data[i]);
+					if (rc < 0) {
+						CAM_WARN(CAM_OIS,
+							"Fail deleting i2c_fw_finalize_data: rc: %d", rc);
+						rc = 0;
+					}
+				}
+			}
 
-            if (o_ctrl->i2c_postinit_data.is_settings_valid == 1) {
-                rc = cam_ois_apply_settings(o_ctrl,
-                    &o_ctrl->i2c_postinit_data);
-                if ((rc == -EAGAIN) &&
-                    (o_ctrl->io_master_info.master_type == CCI_MASTER)) {
-                    CAM_WARN(CAM_OIS,
-                        "CCI HW is restting: Reapplying postinit settings");
-                    usleep_range(1000, 1010);
-                    rc = cam_ois_apply_settings(o_ctrl,
-                        &o_ctrl->i2c_postinit_data);
-                }
-                if (rc) {
-                    CAM_ERR(CAM_OIS,
-                        "Cannot apply postinit data %d",
-                        rc);
-                    goto pwr_dwn;
-                } else {
-                    CAM_DBG(CAM_OIS, "OIS postinit settings success");
-                }
-            }
-            rc = delete_request(&o_ctrl->i2c_postinit_data);
-            if (rc < 0) {
-                CAM_WARN(CAM_OIS,
-                    "Fail deleting postinit data: rc: %d", rc);
-                rc = 0;
-            }
-        }
+			// xiaomi add begin
+			if (o_ctrl->i2c_postinit_data.is_settings_valid == 1) {
+				rc = cam_ois_apply_settings(o_ctrl,
+					&o_ctrl->i2c_postinit_data);
+				if ((rc == -EAGAIN) &&
+					(o_ctrl->io_master_info.master_type == CCI_MASTER)) {
+					CAM_WARN(CAM_OIS,
+						"CCI HW is restting: Reapplying postinit settings");
+					usleep_range(1000, 1010);
+					rc = cam_ois_apply_settings(o_ctrl,
+						&o_ctrl->i2c_postinit_data);
+				}
+				if (rc) {
+					CAM_ERR(CAM_OIS,
+						"Cannot apply postinit data %d",
+						rc);
+					goto pwr_dwn;
+				} else {
+					CAM_DBG(CAM_OIS, "OIS postinit settings success");
+				}
+			}
 
-        rc = delete_request(&o_ctrl->i2c_init_data);
-        if (rc < 0) {
-            CAM_WARN(CAM_OIS,
-                "Fail deleting Init data: rc: %d", rc);
-            rc = 0;
-        }
-        rc = delete_request(&o_ctrl->i2c_calib_data);
-        if (rc < 0) {
-            CAM_WARN(CAM_OIS,
-                "Fail deleting Calibration data: rc: %d", rc);
-            rc = 0;
-        }
-        break;
+			rc = delete_request(&o_ctrl->i2c_postinit_data);
+			if (rc < 0) {
+				CAM_WARN(CAM_OIS,
+					"Fail deleting postinit data: rc: %d", rc);
+				rc = 0;
+			}
+			// xiaomi add end
+		}
+		rc = delete_request(&o_ctrl->i2c_fwinit_data);
+		if (rc < 0) {
+			CAM_WARN(CAM_OIS,
+				"Fail deleting fwinit data: rc: %d", rc);
+			rc = 0;
+		}
+		rc = delete_request(&o_ctrl->i2c_init_data);
+		if (rc < 0) {
+			CAM_WARN(CAM_OIS,
+				"Fail deleting Init data: rc: %d", rc);
+			rc = 0;
+		}
+		rc = delete_request(&o_ctrl->i2c_calib_data);
+		if (rc < 0) {
+			CAM_WARN(CAM_OIS,
+				"Fail deleting Calibration data: rc: %d", rc);
+			rc = 0;
+		}
+		break;
+	case CAM_OIS_PACKET_OPCODE_OIS_CONTROL:
+		CAM_DBG(CAM_OIS, "CAM_OIS_PACKET_OPCODE_OIS_CONTROL");
+		if (o_ctrl->cam_ois_state < CAM_OIS_CONFIG) {
+			rc = -EINVAL;
+			CAM_WARN(CAM_OIS,
+				"Not in right state to control OIS: %d",
+				o_ctrl->cam_ois_state);
+			goto releasepacket_end;
+		}
+		offset = (uint32_t *)&csl_packet->payload;
+		offset += (csl_packet->cmd_buf_offset / sizeof(uint32_t));
+		cmd_desc = (struct cam_cmd_buf_desc *)(offset);
+		i2c_reg_settings = &(o_ctrl->i2c_mode_data);
+		i2c_reg_settings->is_settings_valid = 1;
+		i2c_reg_settings->request_id = 0;
+		rc = cam_sensor_i2c_command_parser(&o_ctrl->io_master_info,
+			i2c_reg_settings,
+			cmd_desc, 1, NULL);
+		if (rc < 0) {
+			CAM_ERR(CAM_OIS, "OIS pkt parsing failed: %d", rc);
+			goto releasepacket_end;
+		}
 
-    case CAM_OIS_PACKET_OPCODE_OIS_CONTROL:
-        CAM_DBG(CAM_OIS, "CAM_OIS_PACKET_OPCODE_OIS_CONTROL");
-        if (o_ctrl->cam_ois_state < CAM_OIS_CONFIG) {
-            rc = -EINVAL;
-            CAM_WARN(CAM_OIS,
-                "Not in right state to control OIS: %d",
-                o_ctrl->cam_ois_state);
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
-        offset = (uint32_t *)&csl_packet->payload;
-        offset += (csl_packet->cmd_buf_offset / sizeof(uint32_t));
-        cmd_desc = (struct cam_cmd_buf_desc *)(offset);
-        i2c_reg_settings = &(o_ctrl->i2c_mode_data);
-        i2c_reg_settings->is_settings_valid = 1;
-        i2c_reg_settings->request_id = 0;
-        rc = cam_sensor_i2c_command_parser(&o_ctrl->io_master_info,
-            i2c_reg_settings,
-            cmd_desc, 1, NULL);
-        if (rc < 0) {
-            CAM_ERR(CAM_OIS, "OIS pkt parsing failed: %d", rc);
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
+		rc = cam_ois_apply_settings(o_ctrl, i2c_reg_settings);
+		if (rc < 0) {
+			CAM_ERR(CAM_OIS, "Cannot apply mode settings");
+			goto releasepacket_end;
+		}
 
-        rc = cam_ois_apply_settings(o_ctrl, i2c_reg_settings);
-        if (rc < 0) {
-            CAM_ERR(CAM_OIS, "Cannot apply mode settings");
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
+		rc = delete_request(i2c_reg_settings);
+		if (rc < 0) {
+			CAM_ERR(CAM_OIS,
+				"Fail deleting Mode data: rc: %d", rc);
+			goto releasepacket_end;
+		}
+		break;
+	case CAM_OIS_PACKET_OPCODE_READ: {
+		uint64_t qtime_ns;
+		struct cam_buf_io_cfg *io_cfg;
+		struct i2c_settings_array i2c_read_settings;
 
-        rc = delete_request(i2c_reg_settings);
-        if (rc < 0) {
-            CAM_ERR(CAM_OIS,
-                "Fail deleting Mode data: rc: %d", rc);
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
-        break;
+		CAM_DBG(CAM_OIS, "CAM_OIS_PACKET_OPCODE_READ");
 
-    case CAM_OIS_PACKET_OPCODE_READ: {
-        uint64_t qtime_ns;
-        struct cam_buf_io_cfg *io_cfg;
-        struct i2c_settings_array i2c_read_settings;
+		if (o_ctrl->cam_ois_state < CAM_OIS_CONFIG) {
+			rc = -EINVAL;
+			CAM_WARN(CAM_OIS,
+				"Not in right state to read OIS: %d",
+				o_ctrl->cam_ois_state);
+			goto releasepacket_end;
+		}
+		CAM_DBG(CAM_OIS, "number of I/O configs: %d:",
+			csl_packet->num_io_configs);
+		if (csl_packet->num_io_configs == 0) {
+			CAM_ERR(CAM_OIS, "No I/O configs to process");
+			rc = -EINVAL;
+			goto releasepacket_end;
+		}
 
-        CAM_DBG(CAM_OIS, "CAM_OIS_PACKET_OPCODE_READ");
+		INIT_LIST_HEAD(&(i2c_read_settings.list_head));
 
-        if (o_ctrl->cam_ois_state < CAM_OIS_CONFIG) {
-            rc = -EINVAL;
-            CAM_WARN(CAM_OIS,
-                "Not in right state to read OIS: %d",
-                o_ctrl->cam_ois_state);
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
-        CAM_DBG(CAM_OIS, "number of I/O configs: %d:",
-            csl_packet->num_io_configs);
-        if (csl_packet->num_io_configs == 0) {
-            CAM_ERR(CAM_OIS, "No I/O configs to process");
-            rc = -EINVAL;
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
+		io_cfg = (struct cam_buf_io_cfg *) ((uint8_t *)
+			&csl_packet->payload +
+			csl_packet->io_configs_offset);
 
-        INIT_LIST_HEAD(&(i2c_read_settings.list_head));
+		/* validate read data io config */
+		if (io_cfg == NULL) {
+			CAM_ERR(CAM_OIS, "I/O config is invalid(NULL)");
+			rc = -EINVAL;
+			goto releasepacket_end;
+		}
 
-        io_cfg = (struct cam_buf_io_cfg *) ((uint8_t *)
-            &csl_packet->payload +
-            csl_packet->io_configs_offset);
+		offset = (uint32_t *)&csl_packet->payload;
+		offset += (csl_packet->cmd_buf_offset / sizeof(uint32_t));
+		cmd_desc = (struct cam_cmd_buf_desc *)(offset);
+		i2c_read_settings.is_settings_valid = 1;
+		i2c_read_settings.request_id = 0;
+		rc = cam_sensor_i2c_command_parser(&o_ctrl->io_master_info,
+			&i2c_read_settings,
+			cmd_desc, 1, &io_cfg[0]);
+		if (rc < 0) {
+			CAM_ERR(CAM_OIS, "OIS read pkt parsing failed: %d", rc);
+			goto releasepacket_end;
+		}
 
-        /* validate read data io config */
-        if (io_cfg == NULL) {
-            CAM_ERR(CAM_OIS, "I/O config is invalid(NULL)");
-            rc = -EINVAL;
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
+		rc = cam_sensor_util_get_current_qtimer_ns(&qtime_ns);
+		if (rc < 0) {
+			CAM_ERR(CAM_OIS, "failed to get qtimer rc:%d");
+			goto releasepacket_end;
+		}
 
-        offset = (uint32_t *)&csl_packet->payload;
-        offset += (csl_packet->cmd_buf_offset / sizeof(uint32_t));
-        cmd_desc = (struct cam_cmd_buf_desc *)(offset);
-        i2c_read_settings.is_settings_valid = 1;
-        i2c_read_settings.request_id = 0;
-        rc = cam_sensor_i2c_command_parser(&o_ctrl->io_master_info,
-            &i2c_read_settings,
-            cmd_desc, 1, &io_cfg[0]);
-        if (rc < 0) {
-            CAM_ERR(CAM_OIS, "OIS read pkt parsing failed: %d", rc);
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
+		// xiaomi change begin
+		/*rc = cam_sensor_i2c_read_data(
+			&i2c_read_settings,
+			&o_ctrl->io_master_info);*/
+		rc = cam_sensor_i2c_read_write_ois_data(
+			&i2c_read_settings,
+			&o_ctrl->io_master_info);
+		// xiaomi change end
+		if (rc < 0) {
+			CAM_ERR(CAM_OIS, "cannot read data rc: %d", rc);
+			delete_request(&i2c_read_settings);
+			goto releasepacket_end;
+		}
 
-        rc = cam_sensor_util_get_current_qtimer_ns(&qtime_ns);
-        if (rc < 0) {
-            CAM_ERR(CAM_OIS, "failed to get qtimer rc:%d");
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
+		if (csl_packet->num_io_configs > 1) {
+			rc = cam_sensor_util_write_qtimer_to_io_buffer(
+				qtime_ns, &io_cfg[1]);
+			if (rc < 0) {
+				CAM_ERR(CAM_OIS,
+					"write qtimer failed rc: %d", rc);
+				delete_request(&i2c_read_settings);
+				goto releasepacket_end;
+			}
+		}
 
-        rc = cam_sensor_i2c_read_write_ois_data(
-            &i2c_read_settings,
-            &o_ctrl->io_master_info);
-        if (rc < 0) {
-            CAM_ERR(CAM_OIS, "cannot read data rc: %d", rc);
-            delete_request(&i2c_read_settings);
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
+		rc = delete_request(&i2c_read_settings);
+		if (rc < 0) {
+			CAM_ERR(CAM_OIS,
+				"Failed in deleting the read settings");
+			goto releasepacket_end;
+		}
+		break;
+	}
+	case CAM_OIS_PACKET_OPCODE_WRITE_TIME: {
+		CAM_DBG(CAM_OIS,
+				"CAM_OIS_PACKET_OPCODE_WRITE_TIME");
+		if (o_ctrl->cam_ois_state < CAM_OIS_CONFIG) {
+			rc = -EINVAL;
+			CAM_ERR(CAM_OIS,
+				"Not in right state to write time to OIS: %d",
+				o_ctrl->cam_ois_state);
+			goto releasepacket_end;
+		}
+		offset = (uint32_t *)&csl_packet->payload;
+		offset += (csl_packet->cmd_buf_offset / sizeof(uint32_t));
+		cmd_desc = (struct cam_cmd_buf_desc *)(offset);
+		i2c_reg_settings = &(o_ctrl->i2c_time_data);
+		i2c_reg_settings->is_settings_valid = 1;
+		i2c_reg_settings->request_id = 0;
+		rc = cam_sensor_i2c_command_parser(&o_ctrl->io_master_info,
+			i2c_reg_settings,
+			cmd_desc, 1, NULL);
+		if (rc < 0) {
+			CAM_ERR(CAM_OIS, "OIS pkt parsing failed: %d", rc);
+			goto releasepacket_end;
+		}
 
-        if (csl_packet->num_io_configs > 1) {
-            rc = cam_sensor_util_write_qtimer_to_io_buffer(
-                qtime_ns, &io_cfg[1]);
-            if (rc < 0) {
-                CAM_ERR(CAM_OIS,
-                    "write qtimer failed rc: %d", rc);
-                delete_request(&i2c_read_settings);
-                cam_mem_put_cpu_buf(dev_config.packet_handle);
-                return rc;
-            }
-        }
+		if (o_ctrl->fw_info.fw_count > 0) {
+			uint8_t ois_endianness =
+				(o_ctrl->fw_info.endianness & OIS_ENDIANNESS_MASK_INPUTPARAM) >> 4;
+			rc = cam_ois_update_time(i2c_reg_settings, ois_endianness);
+		} else
+			rc = cam_ois_update_time(i2c_reg_settings, CAM_ENDIANNESS_LITTLE);
+		if (rc < 0) {
+			CAM_ERR(CAM_OIS, "Cannot update time");
+			goto releasepacket_end;
+		}
 
-        rc = delete_request(&i2c_read_settings);
-        if (rc < 0) {
-            CAM_ERR(CAM_OIS,
-                "Failed in deleting the read settings");
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
-        break;
-    }
-    case CAM_OIS_PACKET_OPCODE_WRITE_TIME: {
-        CAM_DBG(CAM_OIS,
-                "CAM_OIS_PACKET_OPCODE_WRITE_TIME");
-        if (o_ctrl->cam_ois_state < CAM_OIS_CONFIG) {
-            rc = -EINVAL;
-            CAM_ERR(CAM_OIS,
-                "Not in right state to write time to OIS: %d",
-                o_ctrl->cam_ois_state);
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
-        offset = (uint32_t *)&csl_packet->payload;
-        offset += (csl_packet->cmd_buf_offset / sizeof(uint32_t));
-        cmd_desc = (struct cam_cmd_buf_desc *)(offset);
-        i2c_reg_settings = &(o_ctrl->i2c_time_data);
-        i2c_reg_settings->is_settings_valid = 1;
-        i2c_reg_settings->request_id = 0;
-        rc = cam_sensor_i2c_command_parser(&o_ctrl->io_master_info,
-            i2c_reg_settings,
-            cmd_desc, 1, NULL);
-        if (rc < 0) {
-            CAM_ERR(CAM_OIS, "OIS pkt parsing failed: %d", rc);
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
+		rc = cam_ois_apply_settings(o_ctrl, i2c_reg_settings);
+		if (rc < 0) {
+			CAM_ERR(CAM_OIS, "Cannot apply mode settings");
+			goto releasepacket_end;
+		}
 
-        if (o_ctrl->fw_info.fw_count > 0) {
-            uint8_t ois_endianness =
-                (o_ctrl->fw_info.endianness & OIS_ENDIANNESS_MASK_INPUTPARAM) >> 4;
-            rc = cam_ois_update_time(i2c_reg_settings, ois_endianness);
-        } else
-            rc = cam_ois_update_time(i2c_reg_settings, CAM_ENDIANNESS_LITTLE);
-        if (rc < 0) {
-            CAM_ERR(CAM_OIS, "Cannot update time");
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
+		rc = delete_request(i2c_reg_settings);
+		if (rc < 0) {
+			CAM_ERR(CAM_OIS,
+				"Fail deleting Mode data: rc: %d", rc);
+			goto releasepacket_end;
+		}
+		break;
+	}
 
-        rc = cam_ois_apply_settings(o_ctrl, i2c_reg_settings);
-        if (rc < 0) {
-            CAM_ERR(CAM_OIS, "Cannot apply mode settings");
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
+	// xiaomi modify begin
+	case CAM_OIS_PACKET_OPCODE_OIS_PARKLENS:{
+		int32_t exit_result = parklens_atomic_read(&(o_ctrl->parklens_ctrl.exit_result));
 
-        rc = delete_request(i2c_reg_settings);
-        if (rc < 0) {
-            CAM_ERR(CAM_OIS,
-                "Fail deleting Mode data: rc: %d", rc);
-            cam_mem_put_cpu_buf(dev_config.packet_handle);
-            return rc;
-        }
-        break;
-    }
+		parklens_state = parklens_atomic_read(
+							&(o_ctrl->parklens_ctrl.parklens_state));
+		CAM_INFO(MI_PARKLENS, "[OISParklensLog] Received parklens buffer parklens_state %d",
+			parklens_state);
+		if ((parklens_state != PARKLENS_INVALID) ||
+			(o_ctrl->cam_ois_state < CAM_OIS_CONFIG)) {
+			rc = -EINVAL;
+			CAM_WARN(MI_PARKLENS,
+				"[OISParklensLog] Not in right state to do parklens: %d/%d, exit result %d release power control right",
+				o_ctrl->cam_ois_state,
+				parklens_state, exit_result);
+			ois_parklens_thread_stop(o_ctrl, EXIT_PARKLENS_WITH_POWERDOWN);
+			ois_deinit_parklens_info(o_ctrl);
+			goto releasepacket_end;
+		}
 
-    case CAM_OIS_PACKET_OPCODE_OIS_PARKLENS:{
-        int32_t exit_result = parklens_atomic_read(&(o_ctrl->parklens_ctrl.exit_result));
+		i2c_reg_settings = &(o_ctrl->i2c_parklens_data);
 
-        parklens_state = parklens_atomic_read(
-                            &(o_ctrl->parklens_ctrl.parklens_state));
-        CAM_INFO(MI_PARKLENS, "[OISParklensLog] Received parklens buffer parklens_state %d",
-            parklens_state);
-        if ((parklens_state != PARKLENS_INVALID) ||
-            (o_ctrl->cam_ois_state < CAM_OIS_CONFIG)) {
-            rc = -EINVAL;
-            CAM_WARN(MI_PARKLENS,
-                "[OISParklensLog] Not in right state to do parklens: %d/%d, exit result %d release power control right",
-                o_ctrl->cam_ois_state,
-                parklens_state, exit_result);
-            ois_parklens_thread_stop(o_ctrl, EXIT_PARKLENS_WITH_POWERDOWN);
-            ois_deinit_parklens_info(o_ctrl);
-            goto releasepacket_end;
-        }
+		i2c_reg_settings->request_id = 0;
+		i2c_reg_settings->is_settings_valid = 1;
+		offset   = (uint32_t *)&csl_packet->payload;
+		offset  += (csl_packet->cmd_buf_offset / sizeof(uint32_t));
+		cmd_desc = (struct cam_cmd_buf_desc *)(offset);
 
-        i2c_reg_settings = &(o_ctrl->i2c_parklens_data);
+		rc = cam_sensor_i2c_command_parser(
+				&o_ctrl->io_master_info,
+				i2c_reg_settings,
+				cmd_desc, 1, NULL);
 
-        i2c_reg_settings->request_id = 0;
-        i2c_reg_settings->is_settings_valid = 1;
-        offset   = (uint32_t *)&csl_packet->payload;
-        offset  += (csl_packet->cmd_buf_offset / sizeof(uint32_t));
-        cmd_desc = (struct cam_cmd_buf_desc *)(offset);
+		if (rc < 0) {
+			CAM_ERR(MI_PARKLENS, "[OISParklensLog] Failed:parse parklens settings: %d",
+				rc);
+			delete_request(i2c_reg_settings);
+			goto releasepacket_end;
+		}
 
-        rc = cam_sensor_i2c_command_parser(
-                &o_ctrl->io_master_info,
-                i2c_reg_settings,
-                cmd_desc, 1, NULL);
+		ois_parklens_thread_trigger(o_ctrl);
+		break;
+	}
 
-        if (rc < 0) {
-            CAM_ERR(MI_PARKLENS, "[OISParklensLog] Failed:parse parklens settings: %d",
-                rc);
-            delete_request(i2c_reg_settings);
-            goto releasepacket_end;
-        }
+	case CAM_OIS_PACKET_OPCODE_OIS_CHANGE_PWM:
 
-        ois_parklens_thread_trigger(o_ctrl);
-        break;
-    }
+		CAM_INFO(CAM_OIS, "[CRM-OIS] Received PWM mode packets");
 
-    case CAM_OIS_PACKET_OPCODE_OIS_CHANGE_PWM:
+		if (o_ctrl->cam_ois_state < CAM_OIS_CONFIG) {
+			rc = -EINVAL;
+			CAM_WARN(CAM_OIS,
+				"[CRM-OIS] Not in right state to control OIS: %d",
+				o_ctrl->cam_ois_state);
+			goto releasepacket_end;
+		}
 
-        CAM_INFO(CAM_OIS, "[CRM-OIS] Received PWM mode packets");
+		CAM_DBG(CAM_OIS, "[CRM-OIS] request_id %llu, i2c_data %p &i2c_data->per_frame %p",
+			csl_packet->header.request_id,
+			&(o_ctrl->i2c_data),
+			&i2c_data->per_frame);
 
-        if (o_ctrl->cam_ois_state < CAM_OIS_CONFIG) {
-            rc = -EINVAL;
-            CAM_WARN(CAM_OIS,
-                "[CRM-OIS] Not in right state to control OIS: %d",
-                o_ctrl->cam_ois_state);
-            goto releasepacket_end;
-        }
+		i2c_data =  &(o_ctrl->i2c_data);
+		i2c_reg_settings = &i2c_data->per_frame[
+			csl_packet->header.request_id % MAX_PER_FRAME_ARRAY];
+		i2c_reg_settings->request_id =
+			csl_packet->header.request_id;
+		i2c_reg_settings->is_settings_valid = 1;
+		offset = (uint32_t *)&csl_packet->payload;
+		offset += csl_packet->cmd_buf_offset / sizeof(uint32_t);
+		cmd_desc = (struct cam_cmd_buf_desc *)(offset);
+		rc = cam_sensor_i2c_command_parser(
+			&o_ctrl->io_master_info,
+			i2c_reg_settings,
+			cmd_desc, 1, NULL);
+		if (rc < 0) {
+			CAM_ERR(CAM_OIS,
+				"[CRM-OIS] CRM OIS parsing failed: %d", rc);
+			goto releasepacket_end;
+		}
 
-        CAM_DBG(CAM_OIS, "[CRM-OIS] request_id %llu, i2c_data %p &i2c_data->per_frame %p",
-            csl_packet->header.request_id,
-            &(o_ctrl->i2c_data),
-            &i2c_data->per_frame);
+		rc = cam_ois_update_req_mgr(o_ctrl, csl_packet);
+		if (rc) {
+			CAM_ERR(CAM_OIS,
+				"[CRM-OIS] Failed in adding request to request manager");
+			goto releasepacket_end;
+		}
+		break;
 
-        i2c_data =  &(o_ctrl->i2c_data);
-        i2c_reg_settings = &i2c_data->per_frame[
-            csl_packet->header.request_id % MAX_PER_FRAME_ARRAY];
-        i2c_reg_settings->request_id =
-            csl_packet->header.request_id;
-        i2c_reg_settings->is_settings_valid = 1;
-        offset = (uint32_t *)&csl_packet->payload;
-        offset += csl_packet->cmd_buf_offset / sizeof(uint32_t);
-        cmd_desc = (struct cam_cmd_buf_desc *)(offset);
-        rc = cam_sensor_i2c_command_parser(
-            &o_ctrl->io_master_info,
-            i2c_reg_settings,
-            cmd_desc, 1, NULL);
-        if (rc < 0) {
-            CAM_ERR(CAM_OIS,
-                "[CRM-OIS] CRM OIS parsing failed: %d", rc);
-            goto releasepacket_end;
-        }
+	case CAM_PKT_NOP_OPCODE:
+		if (o_ctrl->cam_ois_state < CAM_OIS_CONFIG) {
+			CAM_ERR(CAM_OIS,
+				"[CRM-OIS] Received NOP packets in invalid state: %d",
+				o_ctrl->cam_ois_state);
+			rc = -EINVAL;
+			goto releasepacket_end;
+		}
+		rc = cam_ois_update_req_mgr(o_ctrl, csl_packet);
+		if (rc) {
+			CAM_ERR(CAM_OIS,
+				"[CRM-OIS] Failed in adding request to request manager");
+			goto releasepacket_end;
+		}
+		break;
 
-        rc = cam_ois_update_req_mgr(o_ctrl, csl_packet);
-        if (rc) {
-            CAM_ERR(CAM_OIS,
-                "[CRM-OIS] Failed in adding request to request manager");
-            goto releasepacket_end;
-        }
-        break;
+	// xiaomi modify end
+	default:
+		CAM_ERR(MI_PARKLENS, "[OISParklensLog] Invalid Opcode: %d",
+			(csl_packet->header.op_code & 0xFFFFFF));
+		goto releasepacket_end;
+	}
 
-    case CAM_PKT_NOP_OPCODE:
-        if (o_ctrl->cam_ois_state < CAM_OIS_CONFIG) {
-            CAM_ERR(CAM_OIS,
-                "[CRM-OIS] Received NOP packets in invalid state: %d",
-                o_ctrl->cam_ois_state);
-            rc = -EINVAL;
-            goto releasepacket_end;
-        }
-        rc = cam_ois_update_req_mgr(o_ctrl, csl_packet);
-        if (rc) {
-            CAM_ERR(CAM_OIS,
-                "[CRM-OIS] Failed in adding request to request manager");
-            goto releasepacket_end;
-        }
-        break;
-    
-    default:
-        CAM_ERR(CAM_OIS, "Invalid Opcode: %d",
-            (csl_packet->header.op_code & 0xFFFFFF));
-        cam_mem_put_cpu_buf(dev_config.packet_handle);
-        return -EINVAL;
-    }
-
-    if (!rc) {
-        cam_mem_put_cpu_buf(dev_config.packet_handle);
-        return rc;
-    }
-
-releasepacket_end:
-    cam_mem_put_cpu_buf(dev_config.packet_handle);
-    return rc;
+releasepacket_end: // xiaomi add
+	cam_mem_put_cpu_buf(dev_config.packet_handle);
+	return rc;
+releasemem_end: // xiaomi add
+	cam_mem_put_cpu_buf(cmd_desc[i].mem_handle);
+	cam_mem_put_cpu_buf(dev_config.packet_handle);
+	return rc;
 pwr_dwn:
-    cam_mem_put_cpu_buf(dev_config.packet_handle);
-    cam_ois_power_down(o_ctrl);
-    return rc;
+	cam_mem_put_cpu_buf(dev_config.packet_handle);
+	cam_ois_power_down(o_ctrl);
+	return rc;
 }
 
 void cam_ois_shutdown(struct cam_ois_ctrl_t *o_ctrl)
@@ -2277,6 +2366,8 @@ void cam_ois_shutdown(struct cam_ois_ctrl_t *o_ctrl)
 	struct cam_ois_soc_private *soc_private =
 		(struct cam_ois_soc_private *)o_ctrl->soc_info.soc_private;
 	struct cam_sensor_power_ctrl_t *power_info = &soc_private->power_info;
+
+	/* xiaomi add begin */
 	if (PARKLENS_INVALID !=
 		parklens_atomic_read(&(o_ctrl->parklens_ctrl.parklens_state))) {
 		ois_parklens_thread_stop(o_ctrl, EXIT_PARKLENS_WITH_POWERDOWN);
@@ -2286,10 +2377,11 @@ void cam_ois_shutdown(struct cam_ois_ctrl_t *o_ctrl)
 		CAM_INFO(MI_PARKLENS,
 			"[OISParklensLog] parklens is invalid in shutdown");
 	}
+	/* xiaomi add end */
 
 	if (o_ctrl->cam_ois_state == CAM_OIS_INIT)
 		return;
-
+	/* xiaomi add begin */
 	if (o_ctrl->cam_ois_state >= CAM_OIS_CONFIG) {
 		if(false == ois_parklens_power_down(o_ctrl)) {
 			rc = cam_ois_power_down(o_ctrl);
@@ -2304,7 +2396,7 @@ void cam_ois_shutdown(struct cam_ois_ctrl_t *o_ctrl)
 			"[OISParklensLog] shut down but not in CONFIG, parklens powerdown: %d",
 			ois_parklens_power_down(o_ctrl));
 	}
-
+	/* xiaomi add end*/
 	if (o_ctrl->cam_ois_state >= CAM_OIS_ACQUIRE) {
 		rc = cam_destroy_device_hdl(o_ctrl->bridge_intf.device_hdl);
 		if (rc < 0)
@@ -2354,6 +2446,7 @@ void cam_ois_shutdown(struct cam_ois_ctrl_t *o_ctrl)
 	if (o_ctrl->i2c_init_data.is_settings_valid == 1)
 		delete_request(&o_ctrl->i2c_init_data);
 
+	// xiaomi add begin
 	if (o_ctrl->i2c_postinit_data.is_settings_valid == 1)
 		delete_request(&o_ctrl->i2c_postinit_data);
 
@@ -2362,6 +2455,7 @@ void cam_ois_shutdown(struct cam_ois_ctrl_t *o_ctrl)
 		CAM_INFO(MI_PARKLENS,
 			"[OISParklensLog] parklens is not valid, deinit parklens info");
 	}
+	// xiaomi add end
 
 	kfree(power_info->power_setting);
 	kfree(power_info->power_down_setting);
@@ -2369,7 +2463,8 @@ void cam_ois_shutdown(struct cam_ois_ctrl_t *o_ctrl)
 	power_info->power_down_setting = NULL;
 	power_info->power_down_setting_size = 0;
 	power_info->power_setting_size = 0;
-	o_ctrl->last_flush_req = 0; 
+	o_ctrl->last_flush_req = 0; // xiaomi add
+
 	o_ctrl->cam_ois_state = CAM_OIS_INIT;
 }
 
@@ -2387,7 +2482,7 @@ int cam_ois_driver_cmd(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 	struct cam_control              *cmd = (struct cam_control *)arg;
 	struct cam_ois_soc_private      *soc_private = NULL;
 	struct cam_sensor_power_ctrl_t  *power_info = NULL;
-	bool                            parklens_power_down = true; 
+	bool                            parklens_power_down = true;   //xiaomi add
 
 	if (!o_ctrl || !cmd) {
 		CAM_ERR(CAM_OIS, "Invalid arguments");
@@ -2436,7 +2531,7 @@ int cam_ois_driver_cmd(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 			goto release_mutex;
 		}
 		o_ctrl->cam_ois_state = CAM_OIS_START;
-		o_ctrl->last_flush_req = 0;
+		o_ctrl->last_flush_req = 0;  // xiaomi add
 		break;
 	case CAM_CONFIG_DEV:
 		rc = cam_ois_pkt_parse(o_ctrl, arg);
@@ -2446,7 +2541,8 @@ int cam_ois_driver_cmd(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 		}
 		break;
 	case CAM_RELEASE_DEV:{
-		struct i2c_settings_array *i2c_set = NULL;
+		struct i2c_settings_array *i2c_set = NULL; // xiaomi add
+
 		if (o_ctrl->cam_ois_state == CAM_OIS_START) {
 			rc = -EINVAL;
 			CAM_WARN(CAM_OIS,
@@ -2454,6 +2550,7 @@ int cam_ois_driver_cmd(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 			goto release_mutex;
 		}
 
+		//xiaomi modify begin
 		parklens_power_down = ois_parklens_power_down(o_ctrl);
 		CAM_INFO(MI_PARKLENS, "[OISParklensLog] CAM_RELEASE_DEV is_parklens_power_down status %d/%d",
 			parklens_power_down,
@@ -2468,6 +2565,7 @@ int cam_ois_driver_cmd(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 				}
 			}
 		}
+		//xiaomi modify end
 
 		if (o_ctrl->bridge_intf.device_hdl == -1) {
 			CAM_ERR(CAM_OIS, "link hdl: %d device hdl: %d",
@@ -2483,8 +2581,9 @@ int cam_ois_driver_cmd(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 		o_ctrl->bridge_intf.link_hdl = -1;
 		o_ctrl->bridge_intf.session_hdl = -1;
 		o_ctrl->cam_ois_state = CAM_OIS_INIT;
-		o_ctrl->last_flush_req = 0;
+		o_ctrl->last_flush_req = 0; // xiaomi add
 
+		//xiaomi modify begin
 		if (parklens_power_down == false) {
 			kfree(power_info->power_setting);
 			kfree(power_info->power_down_setting);
@@ -2493,6 +2592,7 @@ int cam_ois_driver_cmd(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 			power_info->power_down_setting_size = 0;
 			power_info->power_setting_size = 0;
 		}
+		//xiaomi modify end
 
 		if (o_ctrl->i2c_mode_data.is_settings_valid == 1)
 			delete_request(&o_ctrl->i2c_mode_data);
@@ -2506,8 +2606,10 @@ int cam_ois_driver_cmd(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 		if (o_ctrl->i2c_fwinit_data.is_settings_valid == 1)
 			delete_request(&o_ctrl->i2c_fwinit_data);
 
+		// xiaomi add begin
 		if (o_ctrl->i2c_postinit_data.is_settings_valid == 1)
 			delete_request(&o_ctrl->i2c_postinit_data);
+		// xiaomi add end
 
 		for (i = 0; i < MAX_OIS_FW_COUNT; i++) {
 			if (o_ctrl->i2c_fw_init_data[i].is_settings_valid == 1) {
@@ -2532,6 +2634,7 @@ int cam_ois_driver_cmd(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 		{
 			cam_fw_mem_store(o_ctrl);
 		}
+		// xiaomi add begin
 		for (i = 0; i < MAX_PER_FRAME_ARRAY; i++) {
 			i2c_set = &(o_ctrl->i2c_data.per_frame[i]);
 			if (i2c_set->is_settings_valid == 1) {
@@ -2542,6 +2645,7 @@ int cam_ois_driver_cmd(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 						i2c_set->request_id, rc);
 			}
 		}
+		// xiaomi add end
 		break;
 	}
 	case CAM_STOP_DEV:
@@ -2552,7 +2656,7 @@ int cam_ois_driver_cmd(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 				o_ctrl->cam_ois_state);
 			goto release_mutex;
 		}
-		o_ctrl->last_flush_req = 0;
+		o_ctrl->last_flush_req = 0; // xiaomi add
 		o_ctrl->cam_ois_state = CAM_OIS_CONFIG;
 		break;
 	case CAM_FLUSH_REQ:
@@ -2567,6 +2671,7 @@ release_mutex:
 	return rc;
 }
 
+// xiaomi add begin
 int32_t init_ois_parklens_info(struct cam_ois_ctrl_t *o_ctrl)
 {
 	int32_t rc = 0;
@@ -3094,3 +3199,4 @@ release_mutex:
 	mutex_unlock(&(o_ctrl->ois_mutex));
 	return rc;
 }
+// xiaomi add end

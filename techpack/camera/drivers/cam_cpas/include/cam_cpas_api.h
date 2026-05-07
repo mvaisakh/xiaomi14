@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _CAM_CPAS_API_H_
@@ -31,15 +31,6 @@
 /* Qos Selection mask */
 #define CAM_CPAS_QOS_DEFAULT_SETTINGS_MASK 0x1
 #define CAM_CPAS_QOS_CUSTOM_SETTINGS_MASK  0x2
-
-/**
- *  Secure camera QoS update id - Enum for identify QOS settings update type
- */
-enum secure_camera_qos_update_type {
-	CAM_QOS_UPDATE_TYPE_STATIC = 0x0,
-	CAM_QOS_UPDATE_TYPE_SMART  = 0x1,
-	CAM_QOS_UPDATE_TYPE_MAX,
-};
 
 /**
  * enum cam_cpas_regbase_types - Enum for cpas regbase available for clients
@@ -95,9 +86,6 @@ enum cam_cpas_camera_version {
 	CAM_CPAS_CAMERA_VERSION_640  = 0x00060400,
 	CAM_CPAS_CAMERA_VERSION_880  = 0x00080800,
 	CAM_CPAS_CAMERA_VERSION_980  = 0x00090800,
-	CAM_CPAS_CAMERA_VERSION_860  = 0x00080600,
-	CAM_CPAS_CAMERA_VERSION_770  = 0x00070700,
-	CAM_CPAS_CAMERA_VERSION_665  = 0x00060605,
 	CAM_CPAS_CAMERA_VERSION_MAX
 };
 
@@ -112,7 +100,6 @@ enum cam_cpas_version {
 	CAM_CPAS_VERSION_120  = 0x10020000,
 	CAM_CPAS_VERSION_130  = 0x10030000,
 	CAM_CPAS_VERSION_200  = 0x20000000,
-	CAM_CPAS_VERSION_210  = 0x20010000,
 	CAM_CPAS_VERSION_MAX
 };
 
@@ -136,9 +123,6 @@ enum cam_cpas_camera_version_map_id {
 	CAM_CPAS_CAMERA_VERSION_ID_640  = 0xC,
 	CAM_CPAS_CAMERA_VERSION_ID_880  = 0xD,
 	CAM_CPAS_CAMERA_VERSION_ID_980  = 0xE,
-	CAM_CPAS_CAMERA_VERSION_ID_860  = 0xF,
-	CAM_CPAS_CAMERA_VERSION_ID_770  = 0x10,
-	CAM_CPAS_CAMERA_VERSION_ID_665  = 0x11,
 	CAM_CPAS_CAMERA_VERSION_ID_MAX
 };
 
@@ -153,7 +137,6 @@ enum cam_cpas_version_map_id {
 	CAM_CPAS_VERSION_ID_120  = 0x3,
 	CAM_CPAS_VERSION_ID_130  = 0x4,
 	CAM_CPAS_VERSION_ID_200  = 0x5,
-	CAM_CPAS_VERSION_ID_210  = 0x6,
 	CAM_CPAS_VERSION_ID_MAX
 };
 
@@ -183,12 +166,8 @@ enum cam_cpas_hw_version {
 	CAM_CPAS_TITAN_680_V110 = 0x680110,
 	CAM_CPAS_TITAN_780_V100 = 0x780100,
 	CAM_CPAS_TITAN_640_V200 = 0x640200,
-	CAM_CPAS_TITAN_640_V210 = 0x640210,
 	CAM_CPAS_TITAN_880_V100 = 0x880100,
 	CAM_CPAS_TITAN_980_V100 = 0x980100,
-	CAM_CPAS_TITAN_860_V100 = 0x860100,
-	CAM_CPAS_TITAN_770_V100 = 0x770100,
-	CAM_CPAS_TITAN_665_V100 = 0x665100,
 	CAM_CPAS_TITAN_MAX
 };
 

@@ -31,7 +31,6 @@
 #define CAM_DUMP_REQ                        (CAM_COMMON_OPCODE_BASE_v2 + 0x3)
 #define CAM_QUERY_CAP_V3                    (CAM_COMMON_OPCODE_BASE_v2 + 0x4)
 #define CAM_SYNX_TEST_TRIGGER               (CAM_COMMON_OPCODE_BASE_v2 + 0x5)
-#define CAM_CUSTOM_DEV_CONFIG               (CAM_COMMON_OPCODE_BASE_v2 + 0x6)
 
 #define CAM_EXT_OPCODE_BASE                     0x200
 #define CAM_CONFIG_DEV_EXTERNAL                 (CAM_EXT_OPCODE_BASE + 0x1)
@@ -94,20 +93,6 @@ struct cam_control {
 	__u32        size;
 	__u32        handle_type;
 	__u32        reserved;
-	__u64        handle;
-};
-
-/**
- * struct cam_custom_cmd - Structure used by ioctl control for camera
- *                         devices to send custom commands.
- *
- * @cmd_type:           Command type
- * @size:               Size of the data
- * @handle:             Pointer to the command data
- */
-struct cam_custom_cmd {
-	__u32        cmd_type;
-	__u32        size;
 	__u64        handle;
 };
 
@@ -257,7 +242,8 @@ struct cam_iommu_handle {
 #define CAM_PACKET_DEV_LRME                     17
 #define CAM_PACKET_DEV_TFE                      18
 #define CAM_PACKET_DEV_OPE                      19
-#define CAM_PACKET_DEV_MAX                      20
+#define CAM_PACKET_DEV_APERTURE                 20
+#define CAM_PACKET_DEV_MAX                      21
 
 /* Register base type */
 #define CAM_REG_DUMP_BASE_TYPE_ISP_LEFT         1

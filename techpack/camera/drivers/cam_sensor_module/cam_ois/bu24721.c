@@ -383,6 +383,9 @@ int bu24721_ois_apply_settings(struct cam_ois_ctrl_t *o_ctrl,
 				CAM_DBG(CAM_OIS,"[BU24721] ois name %s, request id %d, j=[%d], reg_addr 0x%x, 0x%x", o_ctrl->ois_name,
 					i2c_set->request_id, j, i2c_list->i2c_settings.reg_setting[j].reg_addr,
 					i2c_list->i2c_settings.reg_setting[j].reg_data);
+				trace_cam_i2c_write_log_event("[BU24721]", o_ctrl->ois_name,
+					i2c_set->request_id, j, "WRITE", i2c_list->i2c_settings.reg_setting[j].reg_addr,
+					i2c_list->i2c_settings.reg_setting[j].reg_data);
 			}
 			break;
 		}
@@ -392,11 +395,20 @@ int bu24721_ois_apply_settings(struct cam_ois_ctrl_t *o_ctrl,
 				CAM_DBG(CAM_OIS, "[BU24721] ois name  %s, request id %d, j=[%d], reg_addr 0x%x, 0x%x",o_ctrl->ois_name,
 					i2c_set->request_id, j,i2c_list->i2c_settings.reg_setting[j].reg_addr,
 					i2c_list->i2c_settings.reg_setting[j].reg_data);
+				trace_cam_i2c_write_log_event("[BU24721]", o_ctrl->ois_name,
+					i2c_set->request_id, j, "READ", i2c_list->i2c_settings.reg_setting[j].reg_addr,
+					i2c_list->i2c_settings.reg_setting[j].reg_data);
 			}
 			break;
 		}
-		case CAM_SENSOR_I2C_POLL:
+		case CAM_SENSOR_I2C_POLL: {
+			for (j = 0;j < i2c_list->i2c_settings.size;j++) {
+				trace_cam_i2c_write_log_event("[BU24721]", o_ctrl->ois_name,
+					i2c_set->request_id, j, "POLL", i2c_list->i2c_settings.reg_setting[j].reg_addr,
+					i2c_list->i2c_settings.reg_setting[j].reg_data);
+			}
 			break;
+		}
 		default:
 			break;
 		}
@@ -487,6 +499,8 @@ int bu24721_ois_apply_calib_settings(struct cam_ois_ctrl_t *o_ctrl,
 					if(i2c_list->i2c_settings.reg_setting[j].reg_addr == GYRO_CALIB){
 						buff[i] = (i2c_list->i2c_settings.reg_setting[j].reg_data & 0x0000ffff);
 						i++;
+						trace_cam_i2c_write_log_event("[BU24721]", o_ctrl->ois_name,
+							i2c_set->request_id, j, "WRITE", i2c_list->i2c_settings.reg_setting[j].reg_addr, buff[i]);
 					}
 				}
 				break;
@@ -520,7 +534,7 @@ int bu24721_ois_apply_calib_settings(struct cam_ois_ctrl_t *o_ctrl,
 			F024_SETTING.data_mask, CAMERA_SENSOR_I2C_TYPE_BYTE,
 			CAMERA_SENSOR_I2C_TYPE_WORD, F024_SETTING.delay);
 
-	CAM_DBG(CAM_OIS, "[BU24721] reg_data x=0x%x y=0x%x", buff[0], buff[1]);
+	CAM_DBG(CAM_OIS,"[BU24721] reg_data x=0x%x y=0x%x",F09D_SETTING[0].reg_data = buff[0], F09D_SETTING[0].reg_data = buff[1]);
 
 	if (rc < 0) {
 		CAM_ERR(CAM_OIS,

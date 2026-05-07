@@ -132,6 +132,7 @@ int32_t cam_cci_i2c_poll_with_32(struct cam_sensor_cci_client *client,
 	enum camera_sensor_i2c_type addr_type,
 	uint32_t delay_ms);
 
+
 /**
  * cam_qup_i2c_read : QUP based i2c read
  * @client    : QUP I2C client structure

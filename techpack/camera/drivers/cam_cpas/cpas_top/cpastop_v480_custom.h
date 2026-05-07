@@ -687,7 +687,7 @@ static struct cam_camnoc_err_logger_info cam480_custom_err_logger_offsets = {
 	.errlog3_high =  0x703c, /* ERRLOGGER_ERRLOG3_HIGH */
 };
 
-static struct cam_cpas_hw_errata_wa_list __maybe_unused cam480_custom_errata_wa_list = {
+static struct cam_cpas_hw_errata_wa_list cam480_custom_errata_wa_list = {
 	.camnoc_flush_slave_pending_trans = {
 		.enable = false,
 		.data.reg_info = {
@@ -709,7 +709,7 @@ static struct cam_camnoc_info cam480_custom_camnoc_info = {
 	.errata_wa_list = &cam480_cpas100_errata_wa_list,
 };
 
-static struct cam_cpas_info __maybe_unused cam480_custom_cpas_info = {
+static struct cam_cpas_info cam480_custom_cpas_info = {
 	.hw_caps_info = {
 		.num_caps_registers = 1,
 		.hw_caps_offsets = {0x8},

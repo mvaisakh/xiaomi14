@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include "cam_csiphy_dev.h"
@@ -11,10 +11,8 @@
 #include <media/cam_sensor.h>
 #include "camera_main.h"
 #include <dt-bindings/msm-camera.h>
-#include "cam_cpas_api.h"
 
 #define CSIPHY_DEBUGFS_NAME_MAX_SIZE 10
-#define CAM_MAX_PHYS_PER_CP_CTRL_REG 4
 static struct dentry *root_dentry;
 
 static inline void cam_csiphy_trigger_reg_dump(struct csiphy_device *csiphy_dev)
@@ -35,21 +33,7 @@ static int cam_csiphy_format_secure_phy_lane_info(
 {
 	struct cam_csiphy_param *param;
 	uint64_t phy_lane_sel_mask = 0;
-	uint32_t cpas_version;
-	uint32_t bit_offset_bet_phys_in_cp_ctrl;
-	int rc;
 
-	if (csiphy_dev->soc_info.index > MAX_SUPPORTED_PHY_IDX) {
-		CAM_ERR(CAM_CSIPHY, "Invalid PHY index: %u",
-			csiphy_dev->soc_info.index);
-			return -EINVAL;
-	}
-	rc = cam_cpas_get_cpas_hw_version(&cpas_version);
-
-	if (rc) {
-		CAM_ERR(CAM_CPAS, "Failed while getting CPAS Version");
-		return rc;
-	}
 	param = &csiphy_dev->csiphy_info[offset];
 
 	if (param->csiphy_3phase) {
@@ -59,6 +43,7 @@ static int cam_csiphy_format_secure_phy_lane_info(
 			phy_lane_sel_mask |= LANE_1_SEL;
 		if (param->lane_enable & CPHY_LANE_2)
 			phy_lane_sel_mask |= LANE_2_SEL;
+		phy_lane_sel_mask <<= CPHY_LANE_SELECTION_SHIFT;
 	} else {
 		if (param->lane_enable & DPHY_LANE_0)
 			phy_lane_sel_mask |= LANE_0_SEL;
@@ -68,51 +53,16 @@ static int cam_csiphy_format_secure_phy_lane_info(
 			phy_lane_sel_mask |= LANE_2_SEL;
 		if (param->lane_enable & DPHY_LANE_3)
 			phy_lane_sel_mask |= LANE_3_SEL;
+		phy_lane_sel_mask <<= DPHY_LANE_SELECTION_SHIFT;
 	}
-	switch(cpas_version)
-	{
-		case CAM_CPAS_TITAN_665_V100:
-			bit_offset_bet_phys_in_cp_ctrl =
-				CAM_CSIPHY_MAX_DPHY_LANES + CAM_CSIPHY_MAX_CPHY_LANES + 1;
-			break;
-		default:
-			bit_offset_bet_phys_in_cp_ctrl =
-			CAM_CSIPHY_MAX_DPHY_LANES + CAM_CSIPHY_MAX_CPHY_LANES;
+	if (csiphy_dev->soc_info.index > MAX_SUPPORTED_PHY_IDX) {
+		CAM_ERR(CAM_CSIPHY, "Invalid PHY index: %u",
+			csiphy_dev->soc_info.index);
+			return -EINVAL;
 	}
 
-	if (CAM_CPAS_TITAN_665_V100 == cpas_version)
-	{
-		if (csiphy_dev->soc_info.index < CAM_MAX_PHYS_PER_CP_CTRL_REG)
-		{
-			phy_lane_sel_mask = phy_lane_sel_mask <<
-			((csiphy_dev->soc_info.index * bit_offset_bet_phys_in_cp_ctrl) +
-			(!param->csiphy_3phase) *
-			(CAM_CSIPHY_MAX_CPHY_LANES));
-		}
-		else
-		{
-			phy_lane_sel_mask = phy_lane_sel_mask <<
-			((csiphy_dev->soc_info.index - CAM_MAX_PHYS_PER_CP_CTRL_REG) *
-			bit_offset_bet_phys_in_cp_ctrl +
-			(!param->csiphy_3phase) *
-			(CAM_CSIPHY_MAX_CPHY_LANES));
-		}
-		*mask = phy_lane_sel_mask;
-	}
-	else
-	{
-		if (param->csiphy_3phase)
-		{
-			phy_lane_sel_mask = phy_lane_sel_mask << CPHY_LANE_SELECTION_SHIFT;
-		}
-		else
-		{
-			phy_lane_sel_mask = phy_lane_sel_mask << DPHY_LANE_SELECTION_SHIFT;
-		}
-		phy_lane_sel_mask |= BIT(csiphy_dev->soc_info.index);
-		*mask = phy_lane_sel_mask;
-	}
-
+	phy_lane_sel_mask |= BIT(csiphy_dev->soc_info.index);
+	*mask = phy_lane_sel_mask;
 
 	CAM_DBG(CAM_CSIPHY, "Formatted PHY[%u] phy_lane_sel_mask: 0x%llx",
 		csiphy_dev->soc_info.index, *mask);
@@ -194,11 +144,6 @@ static void cam_csiphy_subdev_handle_message(struct v4l2_subdev *sd,
 		return;
 	}
 
-	if (!csiphy_dev) {
-		CAM_ERR(CAM_CSIPHY, "csiphy_dev ptr is NULL");
-		return;
-	}
-
 	phy_idx = *(uint32_t *)data;
 	if (phy_idx != csiphy_dev->soc_info.index) {
 		CAM_DBG(CAM_CSIPHY, "Current HW IDX: %u, Expected IDX: %u",
@@ -209,6 +154,8 @@ static void cam_csiphy_subdev_handle_message(struct v4l2_subdev *sd,
 	switch (message_type) {
 	case CAM_SUBDEV_MESSAGE_REG_DUMP: {
 		cam_csiphy_trigger_reg_dump(csiphy_dev);
+		cam_soc_util_print_clk_freq(&csiphy_dev->soc_info);
+
 		break;
 	}
 	case CAM_SUBDEV_MESSAGE_APPLY_CSIPHY_AUX: {
@@ -423,11 +370,6 @@ static long cam_csiphy_subdev_ioctl(struct v4l2_subdev *sd,
 {
 	struct csiphy_device *csiphy_dev = v4l2_get_subdevdata(sd);
 	int rc = 0;
-
-	if (!csiphy_dev) {
-		CAM_ERR(CAM_CSIPHY, "csiphy_dev ptr is NULL");
-		return -EINVAL;
-	}
 
 	switch (cmd) {
 	case VIDIOC_CAM_CONTROL:
@@ -655,27 +597,8 @@ static void cam_csiphy_component_unbind(struct device *dev,
 {
 	struct platform_device *pdev = to_platform_device(dev);
 
-	struct v4l2_subdev *subdev = NULL;
-	struct csiphy_device *csiphy_dev = NULL;
-
-	subdev = platform_get_drvdata(pdev);
-
-	if (!subdev) {
-		CAM_ERR(CAM_CSIPHY, "Error No data in subdev");
-		return;
-	}
-
-	csiphy_dev = v4l2_get_subdevdata(subdev);
-
-	if (!csiphy_dev) {
-		CAM_ERR(CAM_CSIPHY, "Error No data in csiphy_dev");
-		return;
-	}
-
-	if (!csiphy_dev) {
-		CAM_ERR(CAM_CSIPHY, "csiphy_dev ptr is NULL");
-		return;
-	}
+	struct v4l2_subdev *subdev = platform_get_drvdata(pdev);
+	struct csiphy_device *csiphy_dev = v4l2_get_subdevdata(subdev);
 
 	cam_csiphy_debug_unregister();
 	CAM_INFO(CAM_CSIPHY, "Unbind CSIPHY component");

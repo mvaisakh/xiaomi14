@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _CAM_COMPAT_H_
@@ -44,7 +44,8 @@
 MODULE_IMPORT_NS(DMA_BUF);
 #endif
 
-#ifdef CONFIG_CSF_2_5_SECURE_CAMERA
+#ifdef CONFIG_DOMAIN_ID_SECURE_CAMERA
+#include <linux/smcinvoke.h>
 #include <linux/IClientEnv.h>
 #include <linux/ITrustedCameraDriver.h>
 #include <linux/CTrustedCameraDriver.h>
@@ -61,8 +62,6 @@ struct cam_fw_alloc_info {
 int cam_reserve_icp_fw(struct cam_fw_alloc_info *icp_fw, size_t fw_length);
 void cam_unreserve_icp_fw(struct cam_fw_alloc_info *icp_fw, size_t fw_length);
 void cam_cpastop_scm_write(struct cam_cpas_hw_errata_wa *errata_wa);
-int cam_update_camnoc_qos_settings(uint32_t use_case_id,
-	uint32_t num_arg, struct qcom_scm_camera_qos *scm_buf);
 int cam_ife_notify_safe_lut_scm(bool safe_trigger);
 int camera_component_match_add_drivers(struct device *master_dev,
 	struct component_match **match_list);

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _CAM_CSID_HW_INTF_H_
@@ -108,7 +108,6 @@ enum cam_ife_csid_secondary_evt_type {
  * @rup_en:                flag to indicate if rup is on csid side
  * @only_master_rup:       flag to indicate if only master RUP
  * @camif_irq_support:     flag to indicate if CSID supports CAMIF irq
- * @is_ife_sfe_mapped:     flag to indicate if IFE & SFE are one-one mapped
  */
 struct cam_ife_csid_hw_caps {
 	uint32_t      num_rdis;
@@ -123,7 +122,6 @@ struct cam_ife_csid_hw_caps {
 	bool          rup_en;
 	bool          only_master_rup;
 	bool          camif_irq_support;
-	bool          is_ife_sfe_mapped;
 };
 
 struct cam_isp_out_port_generic_info {
@@ -358,11 +356,13 @@ enum cam_ife_csid_reset_type {
  * struct cam_ife_csid_reset_cfg-  csid reset configuration
  * @ reset_type : Global reset or path reset
  * @res_node :   resource need to be reset
+ * @power_on_reset : Set if the reset is issued prior to streaming
  *
  */
 struct cam_csid_reset_cfg_args {
 	enum cam_ife_csid_reset_type   reset_type;
 	struct cam_isp_resource_node  *node_res;
+	bool power_on_reset;
 };
 
 /**
@@ -523,24 +523,12 @@ struct cam_ife_csid_ts_reg_addr {
 };
 
 /*
- * struct cam_ife_csid_mup_update_args:
- *
- * @mup_val:  MUP for odd or even vc
- * @use_mup:  To indicate if CSID needs to consume this MUP
- */
-struct cam_ife_csid_mup_update_args {
-	uint32_t mup_val;
-	bool use_mup;
-};
-
-/*
  * struct cam_ife_csid_mode_switch_update_args:
  *
  * @mup_args:         MUP related arguments
  * @exp_update_args:  Exposure update arguments
  */
 struct cam_ife_csid_mode_switch_update_args {
-	struct cam_ife_csid_mup_update_args mup_args;
 	struct cam_ife_csid_discard_frame_cfg_update exp_update_args;
 };
 

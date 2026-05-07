@@ -405,30 +405,71 @@ TRACE_EVENT(cam_cdm_cb,
 	)
 );
 
-TRACE_EVENT(cam_cci_burst,
-	TP_PROTO(const int32_t idx, int32_t m,
-		int32_t q, const char *msg,
-		uint32_t val),
-	TP_ARGS(idx, m, q, msg, val),
+/* xiaomi add I2C trace begin */
+TRACE_EVENT(cam_i2c_write_log_event,
+	TP_PROTO(const char *flag_name, const char *device_name, uint64_t req_id, int32_t j,
+			const char *w_r_status, uint32_t reg_addr, uint32_t reg_data),
+	TP_ARGS(flag_name, device_name, req_id, j, w_r_status, reg_addr, reg_data),
 	TP_STRUCT__entry(
-		__field(int32_t, index)
-		__field(int32_t, master)
-		__field(int32_t, queue)
-		__string(msg, msg)
-		__field(uint32_t, value)
+		__string(flag_name, flag_name)
+		__string(device_name, device_name)
+		__string(w_r_status, w_r_status)
+		__field(uint64_t, req_id)
+		__field(int32_t, j)
+		__field(uint32_t, reg_addr)
+		__field(uint32_t, reg_data)
 	),
 	TP_fast_assign(
-		__entry->index = idx;
-		__entry->master = m;
-		__entry->queue = q;
-		__assign_str(msg, msg);
-		__entry->value = val;
+		__assign_str(flag_name, flag_name);
+		__assign_str(device_name, device_name);
+		__assign_str(w_r_status, w_r_status);
+		__entry->req_id = req_id;
+		__entry->j = j;
+		__entry->reg_addr = reg_addr;
+		__entry->reg_data = reg_data;
 	),
 	TP_printk(
-		"CCI%d_M%d_Q%d %s : 0x%x",
-		__entry->index, __entry->master, __entry->queue, __get_str(msg), __entry->value
+		"%s %s req_id %llu-%04d %s addr 0x%04X data 0x%04X",
+		__get_str(flag_name), __get_str(device_name),
+		__entry->req_id, __entry->j, __get_str(w_r_status),
+		__entry->reg_addr, __entry->reg_data
 	)
 );
+
+TRACE_EVENT(poll_i2c_compare,
+	TP_PROTO(uint32_t data, uint32_t reg_data),
+	TP_ARGS(data, reg_data),
+	TP_STRUCT__entry(
+		__field(uint32_t, data)
+		__field(uint32_t, reg_data)
+	),
+	TP_fast_assign(
+		__entry->data = data;
+		__entry->reg_data = reg_data;
+	),
+	TP_printk(
+		"[POLL_I2C_COMPARE] data 0x%04X reg_data 0x%04X",
+		__entry->data, __entry->reg_data
+	)
+);
+
+TRACE_EVENT(opcode_name,
+	TP_PROTO(int32_t opcode_value, const char *opcode_name),
+	TP_ARGS(opcode_value, opcode_name),
+	TP_STRUCT__entry(
+		__field(int32_t, opcode_value)
+		__string(opcode_name, opcode_name)
+	),
+	TP_fast_assign(
+		__entry->opcode_value = opcode_value;
+		__assign_str(opcode_name, opcode_name);
+	),
+	TP_printk(
+		"sensor request_id = 0 opcode value = %d opcode_name %s start",
+		__entry->opcode_value, __get_str(opcode_name)
+	)
+);
+/* xiaomi add I2C trace end */
 
 #endif /* _CAM_TRACE_H */
 

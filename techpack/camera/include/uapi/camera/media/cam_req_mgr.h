@@ -65,6 +65,8 @@
 #define V4L_EVENT_CAM_REQ_MGR_NODE_EVENT                                4
 #define V4L_EVENT_CAM_REQ_MGR_SOF_UNIFIED_TS                            5
 #define V4L_EVENT_CAM_REQ_MGR_PF_ERROR                                  6
+
+/* Add by xiaomi V4L event type for Hw event*/
 #define V4L_EVENT_HW_ISSUE_EVENT       		(V4L2_EVENT_PRIVATE_START + 1)
 
 /* Specific event ids to get notified in user space */
@@ -96,6 +98,8 @@
 #define HW_ISSUE_HW_CCI_READ_ERROR                   	 0
 #define HW_ISSUE_HW_CCI_WRITE_ERROR                  	 1
 #define HW_ISSUE_HW_CCI_POLL_ERROR                   	 2
+/*end xiaomi*/
+
 
 /* SOF Event status */
 #define CAM_REQ_MGR_SOF_EVENT_SUCCESS           0
@@ -939,8 +943,11 @@ struct cam_req_mgr_message {
 		struct cam_req_mgr_pf_err_msg pf_err_msg;
 	} u;
 };
+
+// xiaomi add
 #define V4L_EVENT_CAM_MQS_EVENT           (V4L2_EVENT_PRIVATE_START + 7)
 #define V4L_EVENT_CAM_MQS_ISP             1
 #define V4L_EVENT_CAM_MQS_BUBBLE          (V4L_EVENT_CAM_MQS_ISP << 16) + 1
+// xiaomi add
 
 #endif /* __UAPI_LINUX_CAM_REQ_MGR_H */

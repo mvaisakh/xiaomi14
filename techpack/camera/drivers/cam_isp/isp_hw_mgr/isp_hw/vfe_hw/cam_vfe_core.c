@@ -516,7 +516,6 @@ int cam_vfe_process_cmd(void *hw_priv, uint32_t cmd_type,
 	case CAM_ISP_HW_CMD_INIT_CONFIG_UPDATE:
 	case CAM_ISP_HW_CMD_RDI_LCR_CFG:
 	case CAM_ISP_HW_CMD_GET_SET_PRIM_SOF_TS_ADDR:
-	case CAM_ISP_HW_CMD_FCG_CONFIG:
 		rc = core_info->vfe_top->hw_ops.process_cmd(
 			core_info->vfe_top->top_priv, cmd_type, cmd_args,
 			arg_size);
@@ -529,7 +528,6 @@ int cam_vfe_process_cmd(void *hw_priv, uint32_t cmd_type,
 	case CAM_ISP_HW_CMD_UBWC_UPDATE_V2:
 	case CAM_ISP_HW_CMD_WM_CONFIG_UPDATE:
 	case CAM_ISP_HW_CMD_GET_WM_SECURE_MODE:
-	case CAM_ISP_HW_CMD_GET_LAST_CONSUMED_ADDR:
 	case CAM_ISP_HW_CMD_UNMASK_BUS_WR_IRQ:
 	case CAM_ISP_HW_CMD_DUMP_BUS_INFO:
 	case CAM_ISP_HW_CMD_GET_RES_FOR_MID:
@@ -540,6 +538,7 @@ int cam_vfe_process_cmd(void *hw_priv, uint32_t cmd_type,
 	case CAM_ISP_HW_CMD_MC_CTXT_SEL:
 	case CAM_ISP_HW_CMD_IRQ_INJECTION:
 	case CAM_ISP_HW_CMD_DUMP_IRQ_DESCRIPTION:
+	case CAM_ISP_HW_CMD_GET_LAST_CONSUMED_ADDR:
 		rc = core_info->vfe_bus->hw_ops.process_cmd(
 			core_info->vfe_bus->bus_priv, cmd_type, cmd_args,
 			arg_size);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include "tpg_hw.h"
@@ -830,14 +830,14 @@ int tpg_hw_stop(struct tpg_hw *hw)
 			if (rc) {
 				CAM_ERR(CAM_TPG, "TPG[%d] hw stop failed %d",
 					hw->hw_idx, rc);
-				break;
+				return rc;
 			}
 		}
 		rc = tpg_hw_soc_disable(hw);
 		if (rc) {
 			CAM_ERR(CAM_TPG, "TPG[%d] hw soc disable failed %d",
 				hw->hw_idx, rc);
-			break;
+			return rc;
 		}
 		tpg_hw_free_waiting_requests_locked(hw);
 		tpg_hw_free_active_requests_locked(hw);
@@ -966,7 +966,7 @@ static int tpg_hw_configure_init_settings(
 		if (rc) {
 			CAM_ERR(CAM_TPG, "TPG[%d] hw soc enable failed %d",
 				hw->hw_idx, rc);
-			break;
+			return rc;
 		}
 
 		if (hw->hw_info->ops->init)
@@ -975,6 +975,7 @@ static int tpg_hw_configure_init_settings(
 		if (rc) {
 			CAM_ERR(CAM_TPG, "TPG[%d] hw init failed %d",
 				hw->hw_idx, rc);
+			return rc;
 		}
 		break;
 	default:
@@ -1010,7 +1011,7 @@ static int tpg_hw_configure_init_settings_v3(
 		if (rc) {
 			CAM_ERR(CAM_TPG, "TPG[%d] hw soc enable failed %d",
 				hw->hw_idx, rc);
-			break;
+			return rc;
 		}
 
 		if (hw->hw_info->ops->init)
@@ -1019,6 +1020,7 @@ static int tpg_hw_configure_init_settings_v3(
 		if (rc) {
 			CAM_ERR(CAM_TPG, "TPG[%d] hw init failed %d",
 				hw->hw_idx, rc);
+			return rc;
 		}
 		break;
 	default:
@@ -1083,12 +1085,6 @@ int tpg_hw_copy_settings_config(
 
 	if (hw->register_settings == NULL) {
 		CAM_ERR(CAM_TPG, "unable to allocate memory");
-		return -EINVAL;
-	}
-
-	if (settings->settings_array_offset >
-		sizeof(struct tpg_settings_config_t)) {
-		CAM_ERR(CAM_TPG, "Invalid Array Offset");
 		return -EINVAL;
 	}
 
@@ -1336,15 +1332,13 @@ struct tpg_hw_request *tpg_hw_create_request(
 	uint64_t request_id)
 {
 	struct tpg_hw_request *req = NULL;
-	uint32_t num_vc_channels = 0;
+	uint32_t num_vc_channels = hw->hw_info->max_vc_channels;
 	uint32_t i = 0;
 
 	if (!hw) {
 		CAM_ERR(CAM_TPG, "Invalid params");
 		return NULL;
 	}
-
-	num_vc_channels = hw->hw_info->max_vc_channels;
 
 	/* Allocate request */
 	req = kzalloc(sizeof(struct tpg_hw_request),

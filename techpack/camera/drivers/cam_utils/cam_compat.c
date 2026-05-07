@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/dma-mapping.h>
@@ -318,7 +318,7 @@ void cam_free_clear(const void * ptr)
 }
 #endif
 
-#ifdef CONFIG_CSF_2_5_SECURE_CAMERA
+#ifdef CONFIG_DOMAIN_ID_SECURE_CAMERA
 int cam_csiphy_notify_secure_mode(struct csiphy_device *csiphy_dev,
 	bool protect, int32_t offset, bool is_shutdown)
 {
@@ -441,20 +441,6 @@ int cam_csiphy_notify_secure_mode(struct csiphy_device *csiphy_dev,
 }
 #endif
 
-int cam_update_camnoc_qos_settings(uint32_t use_case_id,
-	uint32_t qos_cnt, struct qcom_scm_camera_qos *scm_buf)
-{
-	int rc = 0;
-
-	rc = qcom_scm_camera_update_camnoc_qos(use_case_id, qos_cnt, scm_buf);
-	if (rc) {
-		CAM_ERR(CAM_ISP, "scm call to update QoS failed: %d", rc);
-		rc = -EINVAL;
-	}
-
-	return rc;
-}
-
 /* Callback to compare device from match list before adding as component */
 static inline int camera_component_compare_dev(struct device *dev, void *data)
 {
@@ -572,7 +558,7 @@ static int inline cam_subdev_list_cmp(struct cam_subdev *entry_1, struct cam_sub
 #if (KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE)
 int cam_compat_util_get_dmabuf_va(struct dma_buf *dmabuf, uintptr_t *vaddr)
 {
-	struct iosys_map mapping = {0};
+	struct iosys_map mapping;
 	int error_code = dma_buf_vmap(dmabuf, &mapping);
 
 	if (error_code) {
@@ -690,8 +676,8 @@ int cam_i3c_driver_remove(struct i3c_device *client)
 }
 #endif
 
-#if (KERNEL_VERSION(5, 10, 0) <= LINUX_VERSION_CODE && \
-	KERNEL_VERSION(6, 6, 0) > LINUX_VERSION_CODE)
+#if (KERNEL_VERSION(5, 15, 0) <= LINUX_VERSION_CODE && \
+	KERNEL_VERSION(5, 18, 0) > LINUX_VERSION_CODE)
 long cam_dma_buf_set_name(struct dma_buf *dmabuf, const char *name)
 {
 	long ret = 0;

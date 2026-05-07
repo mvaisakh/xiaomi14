@@ -34,9 +34,9 @@
 #define QTIMER_MUL_FACTOR   10000
 #define QTIMER_DIV_FACTOR   192
 
+// xiaomi add begin
 #define MAX_CCI_DEV         4
 #define MAX_MASTER_DEV      3
-
 struct skip_frame
 {
 	uint64_t req_id;
@@ -49,7 +49,7 @@ void init_power_sync_mutex(struct cam_sensor_cci_client *cci_client, int master)
 void lock_power_sync_mutex(struct cam_sensor_cci_client *cci_client, int master);
 
 void unlock_power_sync_mutex(struct cam_sensor_cci_client *cci_client, int master);
-
+// xiaomi add end
 int cam_sensor_count_elems_i3c_device_id(struct device_node *dev,
 	int *num_entries, char *sensor_id_table_str);
 
@@ -162,8 +162,10 @@ static inline int cam_sensor_util_aon_registration(uint32_t phy_idx, uint32_t ao
 	return cam_csiphy_util_update_aon_registration(phy_idx, aon_camera_id);
 }
 
+//add by xiaomi
 int cam_hw_notify_v4l2_error_event( char *name, void *ctrl, uint32_t id,
 	uint32_t error_type, uint32_t error_code);
 
 uint32_t cam_hw_get_cci_ops(struct i2c_settings_list *i2c_list);
+//end
 #endif /* _CAM_SENSOR_UTIL_H_ */
