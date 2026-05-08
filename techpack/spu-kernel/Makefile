@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
-KBUILD_OPTIONS+= SPU_ROOT=$(KERNEL_SRC)/$(M)
+KBUILD_OPTIONS+= SPU_ROOT=$(srctree)/techpack/spu-kernel
 
 all:
 	$(MAKE) -C $(KERNEL_SRC) M=$(M) modules $(KBUILD_OPTIONS)
