@@ -1247,6 +1247,8 @@ static int spss_probe(struct platform_device *pdev)
 	is_iar_active = false;
 	is_ssr_disabled = false;
 
+	panic("SPSS Driver inited\n");
+
 	pr_info("Probe completed successfully, [%s].\n", firmware_name);
 
 	return 0;
