@@ -331,5 +331,5 @@ camera-$(CONFIG_SPECTRA_SENSOR) += \
 
 camera-y += drivers/camera_main.o
 
-obj-m += camera.o
+obj-y += camera.o
 BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/camera.ko
