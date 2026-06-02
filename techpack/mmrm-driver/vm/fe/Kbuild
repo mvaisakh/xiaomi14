@@ -1,6 +1,6 @@
 
 ifeq ($(CONFIG_MSM_MMRM_VM), y)
-obj-m += mmrm_vm_fe.o
+obj-y += mmrm_vm_fe.o
 
 ifeq ($(CONFIG_ARCH_KALAMA), y)
 ifeq ($(CONFIG_ARCH_QTI_VM), y)
