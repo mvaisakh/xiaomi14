@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
-VIDEO_DRIVER_ABS_PATH := $(VIDEO_ROOT)/video/driver
-VIDEO_DRIVER_REL_PATH := ../video/driver
+VIDEO_ROOT := $(srctree)/techpack/video-driver
+VIDEO_DRIVER_ABS_PATH := $(VIDEO_ROOT)/driver
+VIDEO_DRIVER_REL_PATH := ../driver
 
 ifeq ($(CONFIG_ARCH_PINEAPPLE), y)
 include $(VIDEO_ROOT)/config/pineapple_video.conf
@@ -26,7 +27,7 @@ LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/common/inc \
 USERINCLUDE    += -I$(VIDEO_ROOT)/include/uapi/vidc/media \
                   -I$(VIDEO_ROOT)/include/uapi/vidc
 
-obj-m += video.o
+obj-y += video.o
 
 ifeq ($(CONFIG_MSM_VIDC_PINEAPPLE), y)
 video-objs +=     $(VIDEO_DRIVER_REL_PATH)/platform/pineapple/src/pineapple.o \
