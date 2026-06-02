@@ -1,7 +1,7 @@
 KERNEL_SRC ?= /lib/modules/$(shell uname -r)/build
 M ?= $(shell pwd)
 
-KBUILD_OPTIONS	+= CONFIG_TOUCHSCREEN_SYNA_TCM2=m
+KBUILD_OPTIONS	+= CONFIG_TOUCHSCREEN_SYNA_TCM2=y
 
 modules modules_install clean:
 	$(MAKE) -C $(KERNEL_SRC) M=$(M) \
