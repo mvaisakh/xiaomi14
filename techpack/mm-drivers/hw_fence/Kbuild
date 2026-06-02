@@ -6,7 +6,7 @@ LINUXINCLUDE += -include $(MSM_HW_FENCE_ROOT)/config/kalamammdriversconf.h \
 		-I$(MSM_HW_FENCE_ROOT)hw_fence/include/
 
 ifdef CONFIG_QTI_HW_FENCE
-obj-m += msm_hw_fence.o
+obj-y += msm_hw_fence.o
 
 msm_hw_fence-y := src/msm_hw_fence.o \
 		src/hw_fence_drv_priv.o \

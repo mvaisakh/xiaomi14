@@ -3,7 +3,7 @@
 include $(MSM_EXT_DISPLAY_ROOT)/config/kalamammdrivers.conf
 LINUXINCLUDE += -include $(MSM_EXT_DISPLAY_ROOT)/config/kalamammdriversconf.h
 
-obj-m += msm_ext_display.o
+obj-y += msm_ext_display.o
 
 msm_ext_display-y := src/msm_ext_display.o
 
