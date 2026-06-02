@@ -6,6 +6,7 @@
 
 #include <linux/delay.h>
 #include <linux/soc/qcom/wcd939x-i2c.h>
+#include <linux/soc/qcom/fsa4480-i2c.h>
 
 #include "dp_aux.h"
 #include "dp_hpd.h"
@@ -810,9 +811,7 @@ static int dp_aux_configure_fsa_switch(struct dp_aux *dp_aux,
 end:
 	return rc;
 }
-#endif
-
-#if IS_ENABLED(CONFIG_QCOM_WCD939X_I2C)
+#elif IS_ENABLED(CONFIG_QCOM_WCD939X_I2C)
 static int dp_aux_configure_wcd_switch(struct dp_aux *dp_aux,
 		bool enable, int orientation)
 {
