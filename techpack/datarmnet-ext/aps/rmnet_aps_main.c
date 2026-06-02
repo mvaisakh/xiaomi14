@@ -764,7 +764,7 @@ DATARMNET66942f9c00,DATARMNETf7b3d2c1a0,&DATARMNET5e3c62e3a4,DATARMNET46c1c4375f
 ;}DATARMNET5500f4ed98=false;DATARMNETb666ba3e85=(0xd2d+202-0xdf7);spin_unlock_bh
 (&DATARMNETc3c07e6644);}static const struct rmnet_module_hook_register_info 
 DATARMNET644887c40e[]={{.hooknum=RMNET_MODULE_HOOK_APS_DATA_REPORT,.func=
-DATARMNET5ff569bc33,},};static int __init DATARMNET0718a3fa4c(void){int 
+DATARMNET5ff569bc33,},};static int  DATARMNET0718a3fa4c(void){int 
 DATARMNETb14e52a504;pr_info(
 "\x61\x70\x73\x3a\x20\x69\x6e\x69\x74\x20\x28\x25\x73\x29" "\n",
 DATARMNETe5ef0e617c);DATARMNETb14e52a504=DATARMNETcfa8d492f8();if(
@@ -790,5 +790,5 @@ del_timer_sync(&DATARMNETd21629e047);cancel_work_sync(&DATARMNET8e3aef0760);
 DATARMNETb3f219d872();del_timer_sync(&DATARMNET2d8efce4f0);
 unregister_netdevice_notifier(&DATARMNETc580548769);DATARMNETca7606cfd1();
 DATARMNET112d724eff("\x61\x70\x73\x3a\x20\x65\x78\x69\x74" "\n");}MODULE_LICENSE
-("\x47\x50\x4c\x20\x76\x32");module_init(DATARMNET0718a3fa4c);module_exit(
+("\x47\x50\x4c\x20\x76\x32");techpack_init(DATARMNET0718a3fa4c);module_exit(
 DATARMNETff67054ba9);

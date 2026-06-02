@@ -143,9 +143,9 @@ DATARMNET9afaec21de __read_mostly={.id="\x72\x6d\x6e\x65\x74\x5f\x73\x63\x68",.
 priv_size=sizeof(struct DATARMNET74e95d25df),.enqueue=DATARMNET3a797cc4e9,.
 dequeue=DATARMNET11bbc6360d,.peek=DATARMNET5842e6aac7,.init=DATARMNET757a7de682,
 .reset=DATARMNET9593ab9587,.change_tx_queue_len=DATARMNET6647342968,.owner=
-THIS_MODULE,};static int __init DATARMNETe97da0a844(void){pr_info(
+THIS_MODULE,};static int  DATARMNETe97da0a844(void){pr_info(
 "\x73\x63\x68\x3a\x20\x69\x6e\x69\x74\x20\x28\x25\x73\x29" "\n",
 DATARMNETf1bb41174a);return register_qdisc(&DATARMNET9afaec21de);}static void 
 __exit DATARMNET1dc9099e88(void){unregister_qdisc(&DATARMNET9afaec21de);}
-MODULE_LICENSE("\x47\x50\x4c\x20\x76\x32");module_init(DATARMNETe97da0a844);
+MODULE_LICENSE("\x47\x50\x4c\x20\x76\x32");techpack_init(DATARMNETe97da0a844);
 module_exit(DATARMNET1dc9099e88);

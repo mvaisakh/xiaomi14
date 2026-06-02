@@ -26,7 +26,7 @@
 #include "qwlan_version.h"
 #include "wlan_hdd_main.h"
 
-static int __init hdd_module_init(void)
+static int  hdd_module_init(void)
 {
 	return hdd_driver_load();
 }
@@ -36,7 +36,7 @@ static void __exit hdd_module_exit(void)
 	hdd_driver_unload();
 }
 
-module_init(hdd_module_init);
+techpack_init(hdd_module_init);
 module_exit(hdd_module_exit);
 
 MODULE_LICENSE("Dual BSD/GPL");

@@ -922,7 +922,7 @@ static struct platform_driver msm_ext_disp_audio_codec_rx_driver = {
 	.remove = msm_ext_disp_audio_codec_rx_plat_remove,
 };
 
-static int __init msm_ext_disp_audio_codec_rx_init(void)
+static int  msm_ext_disp_audio_codec_rx_init(void)
 {
 	int rc = 0;
 
@@ -934,7 +934,7 @@ static int __init msm_ext_disp_audio_codec_rx_init(void)
 
 	return rc;
 }
-module_init(msm_ext_disp_audio_codec_rx_init);
+techpack_init(msm_ext_disp_audio_codec_rx_init);
 
 static void __exit msm_ext_disp_audio_codec_rx_exit(void)
 {

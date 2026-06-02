@@ -3042,7 +3042,7 @@ static const struct file_operations bt_dev_fops = {
 	.compat_ioctl = bt_ioctl,
 };
 
-static int __init btpower_init(void)
+static int  btpower_init(void)
 {
 	int ret = 0;
 
@@ -3215,5 +3215,5 @@ static void __exit btpower_exit(void)
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("MSM Bluetooth power control driver");
 
-module_init(btpower_init);
+techpack_init(btpower_init);
 module_exit(btpower_exit);

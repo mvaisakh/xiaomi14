@@ -14,7 +14,7 @@
 #include <linux/device.h>	/* device */
 #include <linux/cdev.h>		/* cdev_alloc() */
 #include <linux/fs.h>		/* alloc_chrdev_region() */
-#include <linux/module.h>	/* module_init() */
+#include <linux/module.h>	/* techpack_init() */
 #include <linux/dma-mapping.h>	/* dma_alloc_coherent() */
 #include <linux/io.h>
 #include <linux/uaccess.h>
@@ -4768,7 +4768,7 @@ static const struct file_operations ipa_test_fops = {
 /**
  * Module Init.
  */
-static int __init ipa_test_init(void)
+static int  ipa_test_init(void)
 {
 	int ret;
 
@@ -4850,7 +4850,7 @@ static void __exit ipa_test_exit(void)
 	IPATEST_DBG("ipa_test_exit complete.\n");
 }
 
-module_init(ipa_test_init);
+techpack_init(ipa_test_init);
 module_exit(ipa_test_exit);
 
 MODULE_LICENSE("GPL v2");

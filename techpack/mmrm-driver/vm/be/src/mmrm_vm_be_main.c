@@ -91,7 +91,7 @@ static struct platform_driver mmrm_vm_be_driver = {
 	.remove = mmrm_vm_be_driver_remove,
 };
 
-static int __init mmrm_vm_be_module_init(void)
+static int  mmrm_vm_be_module_init(void)
 {
 	pr_info("%s:  init start\n", __func__);
 

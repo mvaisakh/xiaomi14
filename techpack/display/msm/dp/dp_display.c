@@ -4034,7 +4034,7 @@ static struct platform_driver dp_display_driver = {
 	},
 };
 
-void __init dp_display_register(void)
+void  dp_display_register(void)
 {
 
 	platform_driver_register(&dp_display_driver);

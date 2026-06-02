@@ -9,7 +9,7 @@
 
 #define NUM_DRIVERS_REG_RET 3
 
-static int __init wcd9xxx_core_init(void)
+static int  wcd9xxx_core_init(void)
 {
 	int ret[NUM_DRIVERS_REG_RET] = {0};
 	int i = 0;
@@ -33,7 +33,7 @@ static int __init wcd9xxx_core_init(void)
 
 	return 0;
 }
-module_init(wcd9xxx_core_init);
+techpack_init(wcd9xxx_core_init);
 
 static void __exit wcd9xxx_core_exit(void)
 {

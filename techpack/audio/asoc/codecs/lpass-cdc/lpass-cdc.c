@@ -1552,13 +1552,13 @@ static void lpass_cdc_drv_exit(void)
 	platform_driver_unregister(&lpass_cdc_drv);
 }
 
-static int __init lpass_cdc_init(void)
+static int  lpass_cdc_init(void)
 {
 	lpass_cdc_drv_init();
 	lpass_cdc_clk_rsc_mgr_init();
 	return 0;
 }
-module_init(lpass_cdc_init);
+techpack_init(lpass_cdc_init);
 
 static void __exit lpass_cdc_exit(void)
 {

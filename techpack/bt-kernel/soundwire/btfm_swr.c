@@ -281,7 +281,7 @@ static struct swr_driver btfm_swr_driver = {
 	.id_table = btfm_swr_id,
 };
 
-static int __init btfm_swr_init(void)
+static int  btfm_swr_init(void)
 {
 	BTFMSWR_INFO("");
 	return swr_driver_register(&btfm_swr_driver);
@@ -293,7 +293,7 @@ static void __exit btfm_swr_exit(void)
 	swr_driver_unregister(&btfm_swr_driver);
 }
 
-module_init(btfm_swr_init);
+techpack_init(btfm_swr_init);
 module_exit(btfm_swr_exit);
 
 MODULE_LICENSE("GPL v2");

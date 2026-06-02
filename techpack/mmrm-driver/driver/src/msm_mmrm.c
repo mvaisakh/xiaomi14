@@ -586,7 +586,7 @@ static struct platform_driver msm_mmrm_driver = {
 	},
 };
 
-static int __init msm_mmrm_init(void)
+static int  msm_mmrm_init(void)
 {
 	int rc = 0;
 
@@ -610,7 +610,7 @@ static void __exit msm_mmrm_exit(void)
 	platform_driver_unregister(&msm_mmrm_driver);
 }
 
-module_init(msm_mmrm_init);
+techpack_init(msm_mmrm_init);
 module_exit(msm_mmrm_exit);
 
 MODULE_DESCRIPTION("QTI MMRM Driver");

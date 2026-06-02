@@ -4640,11 +4640,11 @@ static struct platform_driver swr_mstr_driver = {
 	},
 };
 
-static int __init swrm_init(void)
+static int  swrm_init(void)
 {
 	return platform_driver_register(&swr_mstr_driver);
 }
-module_init(swrm_init);
+techpack_init(swrm_init);
 
 static void __exit swrm_exit(void)
 {

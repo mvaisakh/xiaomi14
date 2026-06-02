@@ -1617,7 +1617,7 @@ static const char *ecm_ipa_state_string(enum ecm_ipa_state state)
  * ecm_ipa_init_module() - module initialization
  *
  */
-static int __init ecm_ipa_init_module(void)
+static int  ecm_ipa_init_module(void)
 {
 	ECM_IPA_LOG_ENTRY();
 	pr_info("ecm driver init\n");

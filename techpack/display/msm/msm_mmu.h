@@ -81,7 +81,7 @@ struct msm_mmu *msm_smmu_new(struct device *dev,
 	enum msm_mmu_domain_type domain);
 
 /* SDE smmu driver initialize and cleanup functions */
-int __init msm_smmu_driver_init(void);
+int  msm_smmu_driver_init(void);
 void __exit msm_smmu_driver_cleanup(void);
 
 #endif /* __MSM_MMU_H__ */

@@ -849,7 +849,7 @@ EXPORT_SYMBOL(rmnet_get_dlmarker_info);
 
 /* Startup/Shutdown */
 
-static int __init rmnet_init(void)
+static int  rmnet_init(void)
 {
 	int rc;
 
@@ -886,6 +886,6 @@ static void __exit rmnet_exit(void)
 	module_put(THIS_MODULE);
 }
 
-module_init(rmnet_init)
+techpack_init(rmnet_init)
 module_exit(rmnet_exit)
 MODULE_LICENSE("GPL v2");

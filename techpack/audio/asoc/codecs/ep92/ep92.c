@@ -1980,7 +1980,7 @@ static struct i2c_driver ep92_i2c_driver = {
 	},
 };
 
-static int __init ep92_codec_init(void)
+static int  ep92_codec_init(void)
 {
 	int ret = 0;
 
@@ -1990,7 +1990,7 @@ static int __init ep92_codec_init(void)
 
 	return ret;
 }
-module_init(ep92_codec_init);
+techpack_init(ep92_codec_init);
 
 static void __exit ep92_codec_exit(void)
 {

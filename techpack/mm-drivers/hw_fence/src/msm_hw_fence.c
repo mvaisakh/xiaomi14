@@ -770,7 +770,7 @@ static struct platform_driver msm_hw_fence_driver = {
 	},
 };
 
-static int __init msm_hw_fence_init(void)
+static int  msm_hw_fence_init(void)
 {
 	int rc = 0;
 
@@ -800,7 +800,7 @@ static void __exit msm_hw_fence_exit(void)
 module_param_named(enable, hw_fence_driver_enable, bool, 0600);
 MODULE_PARM_DESC(enable, "Enable hardware fences");
 
-module_init(msm_hw_fence_init);
+techpack_init(msm_hw_fence_init);
 module_exit(msm_hw_fence_exit);
 
 MODULE_DESCRIPTION("QTI HW Fence Driver");

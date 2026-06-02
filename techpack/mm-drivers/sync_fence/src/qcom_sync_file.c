@@ -556,7 +556,7 @@ res_err:
 	return -ENODEV;
 }
 
-static int __init spec_sync_init(void)
+static int  spec_sync_init(void)
 {
 	int ret = 0;
 
@@ -577,7 +577,7 @@ static void __exit spec_sync_deinit(void)
 	dma_fence_put(&sync_dev.dummy_fence->fence);
 }
 
-module_init(spec_sync_init);
+techpack_init(spec_sync_init);
 module_exit(spec_sync_deinit);
 
 MODULE_DESCRIPTION("QCOM Speculative Sync Driver");

@@ -598,7 +598,7 @@ static struct miscdevice misc_dev = {
 	.fops = &xiaomitouch_dev_fops,
 };
 
-static int __init xiaomi_touch_init(void)
+static int  xiaomi_touch_init(void)
 {
 	int ret = 0;
 
@@ -673,7 +673,7 @@ static void __exit xiaomi_touch_exit(void)
 	destroy_workqueue(oneshot_sensor_enable_wq);
 }
 
-module_init(xiaomi_touch_init);
+techpack_init(xiaomi_touch_init);
 module_exit(xiaomi_touch_exit);
 
 MODULE_LICENSE("GPL");

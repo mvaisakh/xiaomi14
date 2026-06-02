@@ -5634,7 +5634,7 @@ static bool icnss_has_valid_dt_node(void)
 	return false;
 }
 
-static int __init icnss_initialize(void)
+static int  icnss_initialize(void)
 {
 	if (!icnss_has_valid_dt_node())
 		return -ENODEV;
@@ -5650,7 +5650,7 @@ static void __exit icnss_exit(void)
 }
 
 
-module_init(icnss_initialize);
+techpack_init(icnss_initialize);
 module_exit(icnss_exit);
 
 MODULE_LICENSE("GPL v2");

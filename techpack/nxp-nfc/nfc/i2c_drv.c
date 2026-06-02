@@ -584,7 +584,7 @@ static struct i2c_driver nfc_i2c_dev_driver = {
 
 MODULE_DEVICE_TABLE(of, nfc_i2c_dev_match_table);
 
-static int __init nfc_i2c_dev_init(void)
+static int  nfc_i2c_dev_init(void)
 {
 	int ret = 0;
 
@@ -595,7 +595,7 @@ static int __init nfc_i2c_dev_init(void)
 	return ret;
 }
 
-module_init(nfc_i2c_dev_init);
+techpack_init(nfc_i2c_dev_init);
 
 static void __exit nfc_i2c_dev_exit(void)
 {

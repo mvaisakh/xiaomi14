@@ -1585,7 +1585,7 @@ static const struct rmnet_module_hook_register_info aps_data_report_hooks[] = {
 	},
 };
 
-static int __init rmnet_aps_init(void)
+static int  rmnet_aps_init(void)
 {
 	int rc;
 
@@ -1652,5 +1652,5 @@ static void __exit rmnet_aps_exit(void)
 }
 
 MODULE_LICENSE("GPL v2");
-module_init(rmnet_aps_init);
+techpack_init(rmnet_aps_init);
 module_exit(rmnet_aps_exit);

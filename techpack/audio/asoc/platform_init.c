@@ -7,7 +7,7 @@
 #include <linux/module.h>
 #include "platform_init.h"
 
-static int __init audio_platform_init(void)
+static int  audio_platform_init(void)
 {
 
 	return 0;
@@ -17,7 +17,7 @@ static void audio_platform_exit(void)
 {
 }
 
-module_init(audio_platform_init);
+techpack_init(audio_platform_init);
 module_exit(audio_platform_exit);
 
 MODULE_DESCRIPTION("Audio Platform driver");

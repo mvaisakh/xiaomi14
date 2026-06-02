@@ -85,7 +85,7 @@ static void rmnet_ctl_ipa_ready(void *user_data)
 		rmnet_ctl_ipa_registered = true;
 }
 
-static int __init rmnet_ctl_init(void)
+static int  rmnet_ctl_init(void)
 {
 	int rc;
 
@@ -106,7 +106,7 @@ static void __exit rmnet_ctl_exit(void)
 	}
 }
 
-module_init(rmnet_ctl_init)
+techpack_init(rmnet_ctl_init)
 module_exit(rmnet_ctl_exit)
 
 MODULE_DESCRIPTION("RmNet control IPA Driver");

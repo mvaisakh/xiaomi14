@@ -45,7 +45,7 @@ MODULE_LICENSE("Dual BSD/GPL");
  * Return: int
  */
 #ifndef QCA_SINGLE_WIFI_3_0
-static int __init qdf_mod_init(void)
+static int  qdf_mod_init(void)
 #else
 int qdf_mod_init(void)
 #endif
@@ -65,7 +65,7 @@ int qdf_mod_init(void)
 }
 
 #ifndef QCA_SINGLE_WIFI_3_0
-module_init(qdf_mod_init);
+techpack_init(qdf_mod_init);
 #else
 qdf_export_symbol(qdf_mod_init);
 #endif

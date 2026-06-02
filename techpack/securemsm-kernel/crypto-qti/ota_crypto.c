@@ -967,7 +967,7 @@ err:
 	return rc;
 }
 
-static int __init qcota_init(void)
+static int  qcota_init(void)
 {
 	int rc;
 	struct ota_dev_control *podev;
@@ -995,5 +995,5 @@ static void __exit qcota_exit(void)
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("QTI Ota Crypto driver");
 
-module_init(qcota_init);
+techpack_init(qcota_init);
 module_exit(qcota_exit);

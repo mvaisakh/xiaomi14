@@ -2256,7 +2256,7 @@ void wcd_mbhc_deinit(struct wcd_mbhc *mbhc)
 }
 EXPORT_SYMBOL(wcd_mbhc_deinit);
 
-static int __init mbhc_init(void)
+static int  mbhc_init(void)
 {
 	mutex_init(&hphl_pa_lock);
 	mutex_init(&hphr_pa_lock);
@@ -2269,7 +2269,7 @@ static void __exit mbhc_exit(void)
 	mutex_destroy(&hphr_pa_lock);
 }
 
-module_init(mbhc_init);
+techpack_init(mbhc_init);
 module_exit(mbhc_exit);
 
 MODULE_DESCRIPTION("wcd MBHC v2 module");

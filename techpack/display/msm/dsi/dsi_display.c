@@ -9473,7 +9473,7 @@ int dsi_display_unprepare(struct dsi_display *display)
 	return rc;
 }
 
-void __init dsi_display_register(void)
+void  dsi_display_register(void)
 {
 #ifdef MI_DISPLAY_MODIFY
 	mi_disp_feature_init();

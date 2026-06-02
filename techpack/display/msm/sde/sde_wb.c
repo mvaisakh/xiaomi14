@@ -1081,7 +1081,7 @@ static struct platform_driver sde_wb_driver = {
 	},
 };
 
-void __init sde_wb_register(void)
+void  sde_wb_register(void)
 {
 	platform_driver_register(&sde_wb_driver);
 }

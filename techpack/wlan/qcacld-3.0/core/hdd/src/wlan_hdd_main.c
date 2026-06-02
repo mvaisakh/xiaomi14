@@ -22091,7 +22091,7 @@ static int hdd_module_init(void)
 }
 #endif
 #else
-static int __init hdd_module_init(void)
+static int  hdd_module_init(void)
 {
 	int ret = -EINVAL;
 
@@ -23634,7 +23634,7 @@ bool wlan_hdd_is_mlo_connection(struct wlan_hdd_link_info *link_info)
 }
 
 /* Register the module init/exit functions */
-module_init(hdd_module_init);
+techpack_init(hdd_module_init);
 module_exit(hdd_module_exit);
 
 MODULE_LICENSE("Dual BSD/GPL");

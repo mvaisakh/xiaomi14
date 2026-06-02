@@ -622,11 +622,11 @@ static struct i2c_driver aqt1000_i2c_driver = {
 	.remove                 =       aqt1000_i2c_remove,
 };
 
-static int __init aqt1000_init(void)
+static int  aqt1000_init(void)
 {
 	return i2c_add_driver(&aqt1000_i2c_driver);
 }
-module_init(aqt1000_init);
+techpack_init(aqt1000_init);
 
 static void __exit aqt1000_exit(void)
 {

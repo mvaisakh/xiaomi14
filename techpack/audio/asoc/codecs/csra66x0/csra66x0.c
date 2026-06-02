@@ -1500,7 +1500,7 @@ static struct i2c_driver csra66x0_i2c_driver = {
 };
 #endif
 
-static int __init csra66x0_codec_init(void)
+static int  csra66x0_codec_init(void)
 {
 	int ret = 0;
 #if IS_ENABLED(CONFIG_I2C)
@@ -1511,7 +1511,7 @@ static int __init csra66x0_codec_init(void)
 #endif
 	return ret;
 }
-module_init(csra66x0_codec_init);
+techpack_init(csra66x0_codec_init);
 
 static void __exit csra66x0_codec_exit(void)
 {

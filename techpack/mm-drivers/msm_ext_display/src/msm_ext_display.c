@@ -685,7 +685,7 @@ static struct platform_driver this_driver = {
 	},
 };
 
-static int __init msm_ext_disp_init(void)
+static int  msm_ext_disp_init(void)
 {
 	int ret = 0;
 

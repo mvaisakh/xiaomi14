@@ -427,7 +427,7 @@ static struct swr_driver rouleur_slave_driver = {
 	.reset_device = rouleur_swr_reset,
 };
 
-static int __init rouleur_slave_init(void)
+static int  rouleur_slave_init(void)
 {
 	return swr_driver_register(&rouleur_slave_driver);
 }
@@ -437,7 +437,7 @@ static void __exit rouleur_slave_exit(void)
 	swr_driver_unregister(&rouleur_slave_driver);
 }
 
-module_init(rouleur_slave_init);
+techpack_init(rouleur_slave_init);
 module_exit(rouleur_slave_exit);
 
 MODULE_DESCRIPTION("Rouleur Swr Slave driver");

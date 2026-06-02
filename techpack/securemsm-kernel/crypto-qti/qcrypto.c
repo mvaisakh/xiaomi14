@@ -5507,7 +5507,7 @@ err:
 	return rc;
 }
 
-static int __init _qcrypto_init(void)
+static int  _qcrypto_init(void)
 {
 	struct crypto_priv *pcp = &qcrypto_dev;
 
@@ -5539,7 +5539,7 @@ static void __exit _qcrypto_exit(void)
 	platform_driver_unregister(&__qcrypto);
 }
 
-module_init(_qcrypto_init);
+techpack_init(_qcrypto_init);
 module_exit(_qcrypto_exit);
 
 MODULE_LICENSE("GPL v2");

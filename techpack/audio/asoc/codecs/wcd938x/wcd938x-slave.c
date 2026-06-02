@@ -407,7 +407,7 @@ static struct swr_driver wcd938x_slave_driver = {
 	.id_table = wcd938x_swr_id,
 };
 
-static int __init wcd938x_slave_init(void)
+static int  wcd938x_slave_init(void)
 {
 	return swr_driver_register(&wcd938x_slave_driver);
 }
@@ -417,7 +417,7 @@ static void __exit wcd938x_slave_exit(void)
 	swr_driver_unregister(&wcd938x_slave_driver);
 }
 
-module_init(wcd938x_slave_init);
+techpack_init(wcd938x_slave_init);
 module_exit(wcd938x_slave_exit);
 
 MODULE_DESCRIPTION("WCD938X Swr Slave driver");

@@ -306,7 +306,7 @@ void hdcp1_stop(void *data)
 }
 EXPORT_SYMBOL_GPL(hdcp1_stop);
 
-static int __init hdcp_module_init(void)
+static int  hdcp_module_init(void)
 {
 	struct device_node *np = NULL;
 	bool use_smcinvoke = false;
@@ -334,5 +334,5 @@ static void __exit hdcp_module_exit(void)
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("HDCP driver");
 
-module_init(hdcp_module_init);
+techpack_init(hdcp_module_init);
 module_exit(hdcp_module_exit);

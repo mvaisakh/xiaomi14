@@ -1612,12 +1612,12 @@ static struct platform_driver bengal_asoc_machine_driver = {
 	.remove = msm_asoc_machine_remove,
 };
 
-static int __init msm_asoc_machine_init(void)
+static int  msm_asoc_machine_init(void)
 {
         snd_card_sysfs_init();
         return platform_driver_register(&bengal_asoc_machine_driver);
 }
-module_init(msm_asoc_machine_init);
+techpack_init(msm_asoc_machine_init);
 
 static void __exit msm_asoc_machine_exit(void)
 {

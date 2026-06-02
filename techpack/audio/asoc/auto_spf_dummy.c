@@ -1680,7 +1680,7 @@ static struct platform_driver asoc_machine_driver = {
 	.remove = msm_asoc_machine_remove,
 };
 
-int __init auto_spf_init(void)
+int  auto_spf_init(void)
 {
 	snd_card_sysfs_init();
 	platform_driver_register(&audio_pinctrl_dummy_driver);
@@ -1693,7 +1693,7 @@ void auto_spf_exit(void)
 	platform_driver_unregister(&asoc_machine_driver);
 }
 
-module_init(auto_spf_init);
+techpack_init(auto_spf_init);
 module_exit(auto_spf_exit);
 
 MODULE_DESCRIPTION("ALSA SoC Machine Driver for SPF");

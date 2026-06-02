@@ -770,7 +770,7 @@ static struct swr_driver swr_haptics_driver = {
 	.device_down = swr_haptics_device_down,
 };
 
-static int __init swr_haptics_init(void)
+static int  swr_haptics_init(void)
 {
 	return swr_driver_register(&swr_haptics_driver);
 }
@@ -780,7 +780,7 @@ static void __exit swr_haptics_exit(void)
 	swr_driver_unregister(&swr_haptics_driver);
 }
 
-module_init(swr_haptics_init);
+techpack_init(swr_haptics_init);
 module_exit(swr_haptics_exit);
 
 MODULE_DESCRIPTION("SWR haptics driver");

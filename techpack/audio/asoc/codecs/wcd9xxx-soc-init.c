@@ -6,7 +6,7 @@
 #include <linux/module.h>
 #include "audio-ext-clk-up.h"
 
-static int __init wcd9xxx_soc_init(void)
+static int  wcd9xxx_soc_init(void)
 {
 	int ret = 0;
 
@@ -16,7 +16,7 @@ static int __init wcd9xxx_soc_init(void)
 
 	return ret;
 }
-module_init(wcd9xxx_soc_init);
+techpack_init(wcd9xxx_soc_init);
 
 static void __exit wcd9xxx_soc_exit(void)
 {

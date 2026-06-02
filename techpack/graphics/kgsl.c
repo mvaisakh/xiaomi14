@@ -5304,7 +5304,7 @@ void kgsl_core_exit(void)
 	sysstats_unregister_kgsl_stats_cb();
 }
 
-int __init kgsl_core_init(void)
+int  kgsl_core_init(void)
 {
 	int result = 0;
 

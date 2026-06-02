@@ -577,7 +577,7 @@ static struct platform_driver msm_cvp_driver = {
 	},
 };
 
-static int __init msm_cvp_init(void)
+static int  msm_cvp_init(void)
 {
 	int rc = 0;
 
@@ -624,7 +624,7 @@ static void __exit msm_cvp_exit(void)
 	cvp_driver = NULL;
 }
 
-module_init(msm_cvp_init);
+techpack_init(msm_cvp_init);
 module_exit(msm_cvp_exit);
 
 MODULE_SOFTDEP("pre: msm-mmrm");

@@ -40,7 +40,7 @@
 		else                    \
 			return 0;             \
 	}                           \
-	module_init(_x##_mod);
+	techpack_init(_x##_mod);
 
 #define __qdf_virt_module_exit(_x)  module_exit(_x)
 

@@ -949,7 +949,7 @@ static bool cnss_plat_ipc_is_valid_dt_node_found(void)
 
 static DECLARE_WORK(cnss_plat_ipc_init_work, cnss_plat_ipc_init_fn);
 
-static int __init cnss_plat_ipc_qmi_svc_init(void)
+static int  cnss_plat_ipc_qmi_svc_init(void)
 {
 	if (!cnss_plat_ipc_is_valid_dt_node_found())
 		return -ENODEV;
@@ -982,7 +982,7 @@ static void __exit cnss_plat_ipc_qmi_svc_exit(void)
 	cnss_plat_ipc_logging_deinit();
 }
 
-module_init(cnss_plat_ipc_qmi_svc_init);
+techpack_init(cnss_plat_ipc_qmi_svc_init);
 module_exit(cnss_plat_ipc_qmi_svc_exit);
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("CNSS Platform IPC QMI Service");

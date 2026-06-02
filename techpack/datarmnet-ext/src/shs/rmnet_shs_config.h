@@ -18,7 +18,7 @@
 extern struct rmnet_shs_cfg_s rmnet_shs_cfg;
 extern int rmnet_is_real_dev_registered(const struct net_device *real_dev);
 extern rx_handler_result_t rmnet_rx_handler(struct sk_buff **pskb);
-int __init rmnet_shs_module_init(void);
+int  rmnet_shs_module_init(void);
 void __exit rmnet_shs_module_exit(void);
 
 #endif /* _RMNET_SMHS_CONFIG_H_ */

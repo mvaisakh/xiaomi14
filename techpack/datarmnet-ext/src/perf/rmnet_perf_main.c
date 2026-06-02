@@ -291,7 +291,7 @@ void rmnet_perf_unset_hooks(void)
 				     ARRAY_SIZE(rmnet_perf_module_hooks));
 }
 
-static int __init rmnet_perf_init(void)
+static int  rmnet_perf_init(void)
 {
 	int rc;
 
@@ -318,5 +318,5 @@ static void __exit rmnet_perf_exit(void)
 	pr_info("%s(): exiting\n", __func__);
 }
 
-module_init(rmnet_perf_init);
+techpack_init(rmnet_perf_init);
 module_exit(rmnet_perf_exit);

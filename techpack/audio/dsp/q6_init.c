@@ -7,7 +7,7 @@
 #include <linux/module.h>
 #include "q6_init.h"
 
-static int __init audio_q6_init(void)
+static int  audio_q6_init(void)
 {
 // TODO: Is this file required?
 //	adsp_err_init();
@@ -49,7 +49,7 @@ static void __exit audio_q6_exit(void)
 //	voice_mhi_exit();
 }
 
-module_init(audio_q6_init);
+techpack_init(audio_q6_init);
 module_exit(audio_q6_exit);
 MODULE_DESCRIPTION("Q6 module");
 MODULE_LICENSE("GPL v2");

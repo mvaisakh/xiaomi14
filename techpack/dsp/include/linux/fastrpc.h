@@ -144,11 +144,11 @@ static inline long fastrpc_driver_invoke(struct fastrpc_device *dev,
  * use this macro once, and calling it replaces module_init and module_exit.
  */
 #define module_fastrpc_driver(__fastrpc_driver) \
-static int __init __fastrpc_driver##_init(void) \
+static int  __fastrpc_driver##_init(void) \
 { \
 	return fastrpc_driver_register(&(__fastrpc_driver)); \
 } \
-module_init(__fastrpc_driver##_init); \
+techpack_init(__fastrpc_driver##_init); \
 static void __exit __fastrpc_driver##_exit(void) \
 { \
 	fastrpc_driver_unregister(&(__fastrpc_driver)); \

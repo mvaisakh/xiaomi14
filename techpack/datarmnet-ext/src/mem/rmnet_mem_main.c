@@ -327,7 +327,7 @@ void rmnet_mem_adjust(unsigned perm_size, u8 pageorder)
 	spin_unlock_irqrestore(&rmnet_mem_lock, flags);
 }
 
-int __init rmnet_mem_module_init(void)
+int  rmnet_mem_module_init(void)
 {
 	int rc= 0;
 	int i = 0;
@@ -367,5 +367,5 @@ void __exit rmnet_mem_module_exit(void)
 	rmnet_mem_free_all();
 }
 
-module_init(rmnet_mem_module_init);
+techpack_init(rmnet_mem_module_init);
 module_exit(rmnet_mem_module_exit);

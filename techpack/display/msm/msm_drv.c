@@ -2404,7 +2404,7 @@ static struct platform_driver msm_platform_driver = {
 	},
 };
 
-static int __init msm_drm_register(void)
+static int  msm_drm_register(void)
 {
 	if (!modeset)
 		return -EINVAL;
@@ -2441,7 +2441,7 @@ static void __exit msm_drm_unregister(void)
 	platform_driver_unregister(&msm_platform_driver);
 }
 
-module_init(msm_drm_register);
+techpack_init(msm_drm_register);
 module_exit(msm_drm_unregister);
 
 MODULE_AUTHOR("Rob Clark <robdclark@gmail.com");

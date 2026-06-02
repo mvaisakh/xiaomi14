@@ -654,12 +654,12 @@ static void lpass_bt_swr_drv_exit(void)
 	platform_driver_unregister(&lpass_bt_swr_drv);
 }
 
-static int __init lpass_bt_swr_init(void)
+static int  lpass_bt_swr_init(void)
 {
 	lpass_bt_swr_drv_init();
 	return 0;
 }
-module_init(lpass_bt_swr_init);
+techpack_init(lpass_bt_swr_init);
 
 static void __exit lpass_bt_swr_exit(void)
 {

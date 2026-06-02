@@ -37,7 +37,7 @@ MODULE_PARM_DESC(DATARMNETbc8418e817,
 "\x56\x65\x72\x73\x69\x6f\x6e\x20\x6f\x66\x20\x73\x68\x73\x20\x64\x72\x69\x76\x65\x72"
 );static const struct rmnet_module_hook_register_info DATARMNETf6217b20b8={.
 hooknum=RMNET_MODULE_HOOK_SHS_SKB_LL_ENTRY,.func=DATARMNETf5821256ad};static int
- DATARMNET2cb9ae589c;int __init DATARMNET163e93649e(void){pr_info(
+ DATARMNET2cb9ae589c;int  DATARMNET163e93649e(void){pr_info(
 "\x25\x73\x28\x29\x3a\x20\x53\x74\x61\x72\x74\x69\x6e\x67\x20\x72\x6d\x6e\x65\x74\x20\x53\x48\x53\x20\x6d\x6f\x64\x75\x6c\x65\x20\x25\x73\x20" "\n"
 ,__func__,DATARMNETbc8418e817[(0xd2d+202-0xdf7)]);trace_rmnet_shs_high(
 DATARMNET1790979ccf,DATARMNET72cb00fdc0,(0x16e8+787-0xc0c),(0x16e8+787-0xc0c),
@@ -107,4 +107,4 @@ DATARMNET443dab7031,(0x16e8+787-0xc0c),(0x16e8+787-0xc0c),(0x16e8+787-0xc0c),
 rmnet_module_hook_register(&DATARMNETf6217b20b8,(0xd26+209-0xdf6));
 DATARMNETed3cac41ac();DATARMNETecc0627c70.DATARMNET9c869c1ec2=(0xd26+209-0xdf6);
 break;}DATARMNET7492293980(dev);break;default:break;}return NOTIFY_DONE;}
-module_init(DATARMNET163e93649e);module_exit(DATARMNETf3298dab6f);
+techpack_init(DATARMNET163e93649e);module_exit(DATARMNETf3298dab6f);

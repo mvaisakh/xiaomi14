@@ -23,7 +23,7 @@
 #include "ipa_qmi_service.h"
 #include "rndis_ipa.h"
 
-static int __init ipa_late_init(void)
+static int  ipa_late_init(void)
 {
 	int rc = 0;
 

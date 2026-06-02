@@ -553,7 +553,7 @@ static void cnss_utils_smem_mailbox_deinit(void)
 }
 #endif
 
-static int __init cnss_utils_init(void)
+static int  cnss_utils_init(void)
 {
 	struct cnss_utils_priv *priv = NULL;
 
@@ -583,7 +583,7 @@ static void __exit cnss_utils_exit(void)
 	cnss_utils_priv = NULL;
 }
 
-module_init(cnss_utils_init);
+techpack_init(cnss_utils_init);
 module_exit(cnss_utils_exit);
 
 MODULE_LICENSE("GPL v2");

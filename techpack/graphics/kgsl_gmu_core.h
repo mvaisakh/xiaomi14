@@ -405,7 +405,7 @@ extern struct platform_driver gen8_gmu_driver;
 
 /* GMU core functions */
 
-void __init gmu_core_register(void);
+void  gmu_core_register(void);
 void gmu_core_unregister(void);
 
 bool gmu_core_gpmu_isenabled(struct kgsl_device *device);

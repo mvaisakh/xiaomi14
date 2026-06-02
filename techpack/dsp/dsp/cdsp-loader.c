@@ -288,11 +288,11 @@ static struct platform_driver cdsp_loader_driver = {
 	.remove = cdsp_loader_remove,
 };
 
-static int __init cdsp_loader_init(void)
+static int  cdsp_loader_init(void)
 {
 	return platform_driver_register(&cdsp_loader_driver);
 }
-module_init(cdsp_loader_init);
+techpack_init(cdsp_loader_init);
 
 static void __exit cdsp_loader_exit(void)
 {

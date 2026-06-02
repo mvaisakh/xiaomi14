@@ -3815,7 +3815,7 @@ static struct platform_driver adreno_platform_driver = {
 	}
 };
 
-static int __init kgsl_3d_init(void)
+static int  kgsl_3d_init(void)
 {
 	int ret;
 
@@ -3857,7 +3857,7 @@ MODULE_PARM_DESC(gpu_sku_override, "Override SKU code identifier for GPU driver"
 module_param_named(gpu_speed_bin_override, kgsl_gpu_speed_bin_override, uint, 0600);
 MODULE_PARM_DESC(gpu_speed_bin_override, "Override GPU speed bin");
 
-module_init(kgsl_3d_init);
+techpack_init(kgsl_3d_init);
 module_exit(kgsl_3d_exit);
 
 MODULE_DESCRIPTION("3D Graphics driver");

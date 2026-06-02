@@ -205,7 +205,7 @@ struct kgsl_mmu {
 
 #define KGSL_IOMMU(d) (&((d)->mmu.iommu))
 
-int __init kgsl_mmu_init(void);
+int  kgsl_mmu_init(void);
 void kgsl_mmu_exit(void);
 
 int kgsl_mmu_start(struct kgsl_device *device);

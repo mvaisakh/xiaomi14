@@ -616,7 +616,7 @@ EXPORT_SYMBOL(btfm_get_btfmcodec);
 
 static DEVICE_ATTR_RW(btfmcodec_attributes);
 
-static int __init btfmcodec_init(void)
+static int  btfmcodec_init(void)
 {
 	struct btfmcodec_state_machine *states;
 	struct btfmcodec_char_device *btfmcodec_dev;
@@ -780,5 +780,5 @@ info_cleanup:
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("MSM Bluetooth FM CODEC driver");
 
-module_init(btfmcodec_init);
+techpack_init(btfmcodec_init);
 module_exit(btfmcodec_deinit);

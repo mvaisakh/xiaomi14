@@ -49,11 +49,11 @@ int audio_pdr_service_deregister(int domain_id)
 }
 EXPORT_SYMBOL(audio_pdr_service_deregister);
 
-static int __init audio_pdr_late_init(void)
+static int  audio_pdr_late_init(void)
 {
 	return 0;
 }
-module_init(audio_pdr_late_init);
+techpack_init(audio_pdr_late_init);
 
 static void __exit audio_pdr_late_exit(void)
 {
