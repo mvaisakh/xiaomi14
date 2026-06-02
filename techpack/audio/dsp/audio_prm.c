@@ -584,7 +584,7 @@ static struct gpr_driver qcom_audio_prm_driver = {
 	},
 };
 
-static int  audio_prm_module_init(void)
+static int __init audio_prm_module_init(void)
 {
 	int ret;
 	ret = gpr_driver_register(&qcom_audio_prm_driver);
@@ -603,7 +603,7 @@ static void __exit audio_prm_module_exit(void)
 	gpr_driver_unregister(&qcom_audio_prm_driver);
 }
 
-techpack_init(audio_prm_module_init);
+module_init(audio_prm_module_init);
 module_exit(audio_prm_module_exit);
 MODULE_DESCRIPTION("audio prm");
 MODULE_LICENSE("GPL v2");

@@ -635,7 +635,7 @@ static struct rpmsg_driver gpr_driver = {
 	},
 };
 
-static int  gpr_init(void)
+static int __init gpr_init(void)
 {
 	int ret;
 

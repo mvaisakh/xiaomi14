@@ -274,7 +274,7 @@ void gpr_driver_unregister(struct gpr_driver *drv);
  *
  * Helper macro for gprbus drivers which do not do anything special in
  * module init/exit. This eliminates a lot of boilerplate. Each module
- * may only use this macro once, and calling it replaces techpack_init()
+ * may only use this macro once, and calling it replaces module_init()
  * and module_exit()
  */
 #define module_gpr_driver(__gpr_driver) \

@@ -9926,5 +9926,5 @@ MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("QTI Secure Execution Environment Communicator");
 MODULE_IMPORT_NS(DMA_BUF);
 
-techpack_init(qseecom_init);
+module_init(qseecom_init);
 module_exit(qseecom_exit);

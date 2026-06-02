@@ -1291,7 +1291,7 @@ static struct platform_driver spss_driver = {
 /*==========================================================================*/
 /*		Driver Init/Exit					*/
 /*==========================================================================*/
-static int  spss_init(void)
+static int __init spss_init(void)
 {
 	int ret = 0;
 

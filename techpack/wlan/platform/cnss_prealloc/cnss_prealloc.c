@@ -721,7 +721,7 @@ static bool cnss_prealloc_is_valid_dt_node_found(void)
 	return false;
 }
 
-static int  cnss_prealloc_init(void)
+static int __init cnss_prealloc_init(void)
 {
 	if (!cnss_prealloc_is_valid_dt_node_found())
 		return -ENODEV;
@@ -734,5 +734,5 @@ static void __exit cnss_prealloc_exit(void)
 	return;
 }
 
-techpack_init(cnss_prealloc_init);
+module_init(cnss_prealloc_init);
 module_exit(cnss_prealloc_exit);

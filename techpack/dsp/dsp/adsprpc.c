@@ -9074,7 +9074,7 @@ bail:
 }
 EXPORT_SYMBOL(fastrpc_driver_register);
 
-static int  fastrpc_device_init(void)
+static int __init fastrpc_device_init(void)
 {
 	struct fastrpc_apps *me = &gfa;
 	int err = 0, i;
@@ -9292,7 +9292,7 @@ static void __exit fastrpc_device_exit(void)
 	debugfs_remove_recursive(debugfs_root);
 }
 
-techpack_init(fastrpc_device_init);
+module_init(fastrpc_device_init);
 module_exit(fastrpc_device_exit);
 
 MODULE_LICENSE("GPL v2");

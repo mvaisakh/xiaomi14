@@ -247,7 +247,7 @@ static struct Qdisc_ops rmnet_sch_qdisc_ops __read_mostly = {
 	.owner = THIS_MODULE,
 };
 
-static int  rmnet_sch_module_init(void)
+static int __init rmnet_sch_module_init(void)
 {
 	pr_info("sch: init (%s)\n", rmnet_sch_version);
 	return register_qdisc(&rmnet_sch_qdisc_ops);
@@ -259,5 +259,5 @@ static void __exit rmnet_sch_module_exit(void)
 }
 
 MODULE_LICENSE("GPL v2");
-techpack_init(rmnet_sch_module_init);
+module_init(rmnet_sch_module_init);
 module_exit(rmnet_sch_module_exit);

@@ -7,7 +7,7 @@
 #include <linux/module.h>
 #include "machine_815x_init.h"
 
-static int  audio_machine_815x_init(void)
+static int __init audio_machine_815x_init(void)
 {
 	sm8150_init();
 	return 0;
@@ -18,7 +18,7 @@ static void audio_machine_815x_exit(void)
 	sm8150_exit();
 }
 
-techpack_init(audio_machine_815x_init);
+module_init(audio_machine_815x_init);
 module_exit(audio_machine_815x_exit);
 
 MODULE_DESCRIPTION("Audio Machine 815X Driver");

@@ -727,7 +727,7 @@ static struct platform_driver kgsl_mmu_driver = {
 	}
 };
 
-int  kgsl_mmu_init(void)
+int __init kgsl_mmu_init(void)
 {
 	return platform_driver_register(&kgsl_mmu_driver);
 }

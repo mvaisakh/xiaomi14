@@ -3287,7 +3287,7 @@ static void smcinvoke_exit(void)
 	platform_driver_unregister(&smcinvoke_plat_driver);
 }
 
-techpack_init(smcinvoke_init);
+module_init(smcinvoke_init);
 module_exit(smcinvoke_exit);
 
 MODULE_LICENSE("GPL v2");

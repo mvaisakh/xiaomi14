@@ -988,7 +988,7 @@ static struct platform_driver gvm_asoc_machine_driver = {
 	.remove = msm_asoc_machine_remove,
 };
 
-int  gvm_auto_spf_init(void)
+int __init gvm_auto_spf_init(void)
 {
 	return platform_driver_register(&gvm_asoc_machine_driver);
 }
@@ -998,7 +998,7 @@ void gvm_auto_spf_exit(void)
 	platform_driver_unregister(&gvm_asoc_machine_driver);
 }
 
-techpack_init(gvm_auto_spf_init);
+module_init(gvm_auto_spf_init);
 module_exit(gvm_auto_spf_exit);
 
 MODULE_DESCRIPTION("ALSA SoC Machine Driver for SPF");

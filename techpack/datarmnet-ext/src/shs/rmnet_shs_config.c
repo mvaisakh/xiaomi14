@@ -50,7 +50,7 @@ rmnet_shs_ll_entry_hook = {
 
 static int rmnet_vnd_total;
 /* Enable smart hashing capability upon call to initialize module*/
-int  rmnet_shs_module_init(void)
+int __init rmnet_shs_module_init(void)
 {
 	pr_info("%s(): Starting rmnet SHS module %s \n", __func__, rmnet_shs_version[0]);
 	trace_rmnet_shs_high(RMNET_SHS_MODULE, RMNET_SHS_MODULE_INIT,
@@ -224,5 +224,5 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 	return NOTIFY_DONE;
 }
 
-techpack_init(rmnet_shs_module_init);
+module_init(rmnet_shs_module_init);
 module_exit(rmnet_shs_module_exit);

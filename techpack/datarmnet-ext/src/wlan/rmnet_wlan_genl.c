@@ -582,7 +582,7 @@ static struct genl_family rmnet_wlan_genl_family = {
 	.n_ops   = ARRAY_SIZE(rmnet_wlan_genl_ops),
 };
 
-static int  rmnet_wlan_genl_init(void)
+static int __init rmnet_wlan_genl_init(void)
 {
 	int ret = 0;
 
@@ -638,5 +638,5 @@ static void __exit rmnet_wlan_genl_exit(void)
 
 
 MODULE_LICENSE("GPL v2");
-techpack_init(rmnet_wlan_genl_init);
+module_init(rmnet_wlan_genl_init);
 module_exit(rmnet_wlan_genl_exit);

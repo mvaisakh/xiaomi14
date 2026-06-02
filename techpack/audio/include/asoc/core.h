@@ -428,7 +428,7 @@ extern enum wcd9xxx_pm_state wcd9xxx_pm_cmpxchg(
 			struct wcd9xxx_core_resource *wcd9xxx_core_res,
 			enum wcd9xxx_pm_state o,
 			enum wcd9xxx_pm_state n);
-static inline int  wcd9xxx_irq_of_init(struct device_node *node,
+static inline int __init wcd9xxx_irq_of_init(struct device_node *node,
 			       struct device_node *parent)
 {
 	return 0;
@@ -535,7 +535,7 @@ static inline enum wcd9xxx_pm_state wcd9xxx_pm_cmpxchg(
 {
 	return 0;
 }
-static inline int  wcd9xxx_irq_of_init(struct device_node *node,
+static inline int __init wcd9xxx_irq_of_init(struct device_node *node,
 			       struct device_node *parent)
 {
 	return 0;

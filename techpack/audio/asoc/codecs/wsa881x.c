@@ -1692,7 +1692,7 @@ static struct swr_driver wsa881x_codec_driver = {
 	.reset_device = wsa881x_swr_reset,
 };
 
-static int  wsa881x_codec_init(void)
+static int __init wsa881x_codec_init(void)
 {
 	return swr_driver_register(&wsa881x_codec_driver);
 }
@@ -1702,7 +1702,7 @@ static void __exit wsa881x_codec_exit(void)
 	swr_driver_unregister(&wsa881x_codec_driver);
 }
 
-techpack_init(wsa881x_codec_init);
+module_init(wsa881x_codec_init);
 module_exit(wsa881x_codec_exit);
 
 MODULE_DESCRIPTION("WSA881x Codec driver");

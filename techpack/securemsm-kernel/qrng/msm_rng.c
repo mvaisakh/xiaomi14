@@ -457,7 +457,7 @@ static struct platform_driver rng_driver = {
 	},
 };
 
-static int  msm_rng_init(void)
+static int __init msm_rng_init(void)
 {
 	int ret;
 
@@ -479,7 +479,7 @@ err_exit:
 	return ret;
 }
 
-techpack_init(msm_rng_init);
+module_init(msm_rng_init);
 
 static void __exit msm_rng_exit(void)
 {

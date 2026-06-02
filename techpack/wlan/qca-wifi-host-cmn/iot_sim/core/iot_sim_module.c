@@ -29,7 +29,7 @@ MODULE_LICENSE("Dual BSD/GPL");
  * Return: None
  */
 
-static int  iot_sim_init_module(void)
+static int __init iot_sim_init_module(void)
 {
 	wlan_iot_sim_init();
 	iot_sim_info("qca_iot_sim module loaded");
@@ -49,5 +49,5 @@ static void __exit iot_sim_exit_module(void)
 	iot_sim_info("qca_iot_sim module unloaded");
 }
 
-techpack_init(iot_sim_init_module);
+module_init(iot_sim_init_module);
 module_exit(iot_sim_exit_module);

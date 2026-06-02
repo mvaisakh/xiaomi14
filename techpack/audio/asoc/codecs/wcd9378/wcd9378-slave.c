@@ -402,7 +402,7 @@ static struct swr_driver wcd9378_slave_driver = {
 	.id_table = wcd9378_swr_id,
 };
 
-static int  wcd9378_slave_init(void)
+static int __init wcd9378_slave_init(void)
 {
 	return swr_driver_register(&wcd9378_slave_driver);
 }
@@ -412,7 +412,7 @@ static void __exit wcd9378_slave_exit(void)
 	swr_driver_unregister(&wcd9378_slave_driver);
 }
 
-techpack_init(wcd9378_slave_init);
+module_init(wcd9378_slave_init);
 module_exit(wcd9378_slave_exit);
 
 MODULE_DESCRIPTION("WCD9378 Swr Slave driver");

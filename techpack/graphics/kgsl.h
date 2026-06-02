@@ -570,7 +570,7 @@ int kgsl_request_irq(struct platform_device *pdev, const  char *name,
 int kgsl_request_irq_optional(struct platform_device *pdev, const  char *name,
 		irq_handler_t handler, void *data);
 
-int  kgsl_core_init(void);
+int __init kgsl_core_init(void);
 void kgsl_core_exit(void);
 
 static inline bool kgsl_gpuaddr_in_memdesc(const struct kgsl_memdesc *memdesc,

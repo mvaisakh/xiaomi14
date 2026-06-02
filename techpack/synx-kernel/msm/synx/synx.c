@@ -2825,7 +2825,7 @@ static int synx_cdsp_restart_notifier(struct notifier_block *nb,
 	return NOTIFY_DONE;
 }
 
-static int  synx_init(void)
+static int __init synx_init(void)
 {
 	int rc;
 
@@ -2940,7 +2940,7 @@ static void __exit synx_exit(void)
 	kfree(synx_dev);
 }
 
-techpack_init(synx_init);
+module_init(synx_init);
 module_exit(synx_exit);
 
 MODULE_DESCRIPTION("Global Synx Driver");

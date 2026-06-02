@@ -1379,10 +1379,10 @@ struct hdmi;
 #if IS_ENABLED(CONFIG_DRM_MSM_HDMI)
 int msm_hdmi_modeset_init(struct hdmi *hdmi, struct drm_device *dev,
 		struct drm_encoder *encoder);
-void  msm_hdmi_register(void);
+void __init msm_hdmi_register(void);
 void __exit msm_hdmi_unregister(void);
 #else
-static inline void  msm_hdmi_register(void)
+static inline void __init msm_hdmi_register(void)
 {
 }
 static inline void __exit msm_hdmi_unregister(void)
@@ -1392,12 +1392,12 @@ static inline void __exit msm_hdmi_unregister(void)
 
 struct msm_edp;
 #if IS_ENABLED(CONFIG_DRM_MSM_EDP)
-void  msm_edp_register(void);
+void __init msm_edp_register(void);
 void __exit msm_edp_unregister(void);
 int msm_edp_modeset_init(struct msm_edp *edp, struct drm_device *dev,
 		struct drm_encoder *encoder);
 #else
-static inline void  msm_edp_register(void)
+static inline void __init msm_edp_register(void)
 {
 }
 static inline void __exit msm_edp_unregister(void)
@@ -1423,7 +1423,7 @@ struct msm_dsi;
 void msm_mode_object_event_notify(struct drm_mode_object *obj,
 		struct drm_device *dev, struct drm_event *event, u8 *payload);
 #if IS_ENABLED(CONFIG_DRM_MSM_DSI)
-static inline void  msm_dsi_register(void)
+static inline void __init msm_dsi_register(void)
 {
 }
 static inline void __exit msm_dsi_unregister(void)
@@ -1436,17 +1436,17 @@ static inline int msm_dsi_modeset_init(struct msm_dsi *msm_dsi,
 	return -EINVAL;
 }
 #else
-void  msm_dsi_register(void);
+void __init msm_dsi_register(void);
 void __exit msm_dsi_unregister(void);
 int msm_dsi_modeset_init(struct msm_dsi *msm_dsi, struct drm_device *dev,
 			 struct drm_encoder *encoder);
 #endif /* CONFIG_DRM_MSM_DSI */
 
 #if IS_ENABLED(CONFIG_DRM_MSM_MDP5)
-void  msm_mdp_register(void);
+void __init msm_mdp_register(void);
 void __exit msm_mdp_unregister(void);
 #else
-static inline void  msm_mdp_register(void)
+static inline void __init msm_mdp_register(void)
 {
 }
 static inline void __exit msm_mdp_unregister(void)
@@ -1473,10 +1473,10 @@ static inline void msm_perf_debugfs_cleanup(struct msm_drm_private *priv) {}
 #endif /* CONFIG_DEBUG_FS */
 
 #if IS_ENABLED(CONFIG_DRM_MSM_DSI)
-void  dsi_display_register(void);
+void __init dsi_display_register(void);
 void __exit dsi_display_unregister(void);
 #else
-static inline void  dsi_display_register(void)
+static inline void __init dsi_display_register(void)
 {
 }
 static inline void __exit dsi_display_unregister(void)
@@ -1485,10 +1485,10 @@ static inline void __exit dsi_display_unregister(void)
 #endif /* CONFIG_DRM_MSM_DSI */
 
 #if IS_ENABLED(CONFIG_HDCP_QSEECOM)
-void  msm_hdcp_register(void);
+void __init msm_hdcp_register(void);
 void __exit msm_hdcp_unregister(void);
 #else
-static inline void  msm_hdcp_register(void)
+static inline void __init msm_hdcp_register(void)
 {
 }
 static inline void __exit msm_hdcp_unregister(void)
@@ -1497,10 +1497,10 @@ static inline void __exit msm_hdcp_unregister(void)
 #endif /* CONFIG_HDCP_QSEECOM */
 
 #if IS_ENABLED(CONFIG_DRM_MSM_DP)
-void  dp_display_register(void);
+void __init dp_display_register(void);
 void __exit dp_display_unregister(void);
 #else
-static inline void  dp_display_register(void)
+static inline void __init dp_display_register(void)
 {
 }
 static inline void __exit dp_display_unregister(void)
@@ -1509,26 +1509,26 @@ static inline void __exit dp_display_unregister(void)
 #endif /* CONFIG_DRM_MSM_DP */
 
 #if IS_ENABLED(CONFIG_DRM_SDE_RSC)
-void  sde_rsc_register(void);
+void __init sde_rsc_register(void);
 void __exit sde_rsc_unregister(void);
-void  sde_rsc_rpmh_register(void);
+void __init sde_rsc_rpmh_register(void);
 #else
-static inline void  sde_rsc_register(void)
+static inline void __init sde_rsc_register(void)
 {
 }
 static inline void __exit sde_rsc_unregister(void)
 {
 }
-static inline void  sde_rsc_rpmh_register(void)
+static inline void __init sde_rsc_rpmh_register(void)
 {
 }
 #endif /* CONFIG_DRM_SDE_RSC */
 
 #if IS_ENABLED(CONFIG_DRM_SDE_WB)
-void  sde_wb_register(void);
+void __init sde_wb_register(void);
 void __exit sde_wb_unregister(void);
 #else
-static inline void  sde_wb_register(void)
+static inline void __init sde_wb_register(void)
 {
 }
 static inline void __exit sde_wb_unregister(void)

@@ -199,7 +199,7 @@ static struct mhi_driver rmnet_ctl_driver = {
 	},
 };
 
-static int  rmnet_ctl_init(void)
+static int __init rmnet_ctl_init(void)
 {
 	int rc;
 
@@ -215,7 +215,7 @@ static void __exit rmnet_ctl_exit(void)
 	rmnet_ctl_set_dbgfs(false);
 }
 
-techpack_init(rmnet_ctl_init)
+module_init(rmnet_ctl_init)
 module_exit(rmnet_ctl_exit)
 
 MODULE_DESCRIPTION("RmNet Control MHI Driver");

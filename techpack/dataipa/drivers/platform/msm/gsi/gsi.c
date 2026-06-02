@@ -5951,7 +5951,7 @@ static struct platform_device *pdev;
 /**
  * Module Init.
  */
-static int  gsi_init(void)
+static int __init gsi_init(void)
 {
 	int ret;
 

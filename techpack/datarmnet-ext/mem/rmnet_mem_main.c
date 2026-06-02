@@ -109,7 +109,7 @@ rmnet_mem_add_page(newpage,pageorder);}}else{list_for_each_safe(entry,next,&(
 rmnet_mem_pool[pageorder])){mem_slot=list_entry(entry,struct mem_info,mem_head);
 list_del(&mem_slot->mem_head);put_page(mem_slot->addr);kfree(mem_slot);
 static_pool_size[pageorder]--;if(static_pool_size[pageorder]==perm_size)break;}}
-spin_unlock_irqrestore(&rmnet_mem_lock,flags);}int  rmnet_mem_module_init(
+spin_unlock_irqrestore(&rmnet_mem_lock,flags);}int __init rmnet_mem_module_init(
 void){int rc=(0xd2d+202-0xdf7);int i=(0xd2d+202-0xdf7);pr_info(
 "\x25\x73\x28\x29\x3a\x20\x53\x74\x61\x72\x74\x69\x6e\x67\x20\x72\x6d\x6e\x65\x74\x20\x6d\x65\x6d\x20\x6d\x6f\x64\x75\x6c\x65" "\n"
 ,__func__);for(i=(0xd2d+202-0xdf7);i<POOL_LEN;i++){INIT_LIST_HEAD(&(
@@ -122,5 +122,5 @@ rmnet_mem_nl_register();if(rc){pr_err(
 ,__func__);return-ENOMEM;}return(0xd2d+202-0xdf7);}void __exit 
 rmnet_mem_module_exit(void){rmnet_mem_nl_unregister();if(mem_wq){
 cancel_work_sync(&pool_adjust_work);drain_workqueue(mem_wq);destroy_workqueue(
-mem_wq);mem_wq=NULL;}rmnet_mem_free_all();}techpack_init(rmnet_mem_module_init);
+mem_wq);mem_wq=NULL;}rmnet_mem_free_all();}module_init(rmnet_mem_module_init);
 module_exit(rmnet_mem_module_exit);

@@ -569,11 +569,11 @@ static struct platform_driver adsp_loader_driver = {
 	.remove = adsp_loader_remove,
 };
 
-static int  adsp_loader_init(void)
+static int __init adsp_loader_init(void)
 {
 	return platform_driver_register(&adsp_loader_driver);
 }
-techpack_init(adsp_loader_init);
+module_init(adsp_loader_init);
 
 static void __exit adsp_loader_exit(void)
 {

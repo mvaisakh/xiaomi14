@@ -2710,7 +2710,7 @@ static struct platform_driver syna_dev_driver = {
  *    0 if the driver registered and bound to a device,
  *    else returns a negative error code and with the driver not registered.
  */
-static int  syna_dev_module_init(void)
+static int __init syna_dev_module_init(void)
 {
 	int retval;
 
@@ -2740,7 +2740,7 @@ static void __exit syna_dev_module_exit(void)
 	syna_hw_interface_exit();
 }
 
-techpack_init(syna_dev_module_init);
+module_init(syna_dev_module_init);
 module_exit(syna_dev_module_exit);
 
 MODULE_AUTHOR("Synaptics, Inc.");

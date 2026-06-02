@@ -393,7 +393,7 @@ int afe_get_sp_xt_logging_data(u16 port_id)
 }
 EXPORT_SYMBOL(afe_get_sp_xt_logging_data);
 
-int  spk_params_init(void)
+int __init spk_params_init(void)
 {
 	/* initialize xt param value with 0 */
 	this_afe_spk.xt_logging.max_temperature[SP_V2_SPKR_1] = 0;

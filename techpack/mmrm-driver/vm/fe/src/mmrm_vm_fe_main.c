@@ -205,7 +205,7 @@ static struct platform_driver mmrm_vm_fe_driver = {
 	.remove = mmrm_vm_fe_driver_remove,
 };
 
-static int  mmrm_vm_fe_module_init(void)
+static int __init mmrm_vm_fe_module_init(void)
 {
 	d_mpr_e("%s:  init start\n", __func__);
 

@@ -23,7 +23,7 @@ static const struct of_device_id gmu_match_table[] = {
 	{},
 };
 
-void  gmu_core_register(void)
+void __init gmu_core_register(void)
 {
 	const struct of_device_id *match;
 	struct device_node *node;

@@ -3578,7 +3578,7 @@ void ubwcp_exit(void)
 	DBG("-----------");
 }
 
-techpack_init(ubwcp_init);
+module_init(ubwcp_init);
 module_exit(ubwcp_exit);
 
 MODULE_LICENSE("GPL");

@@ -331,7 +331,7 @@ static struct platform_driver msm_hdcp_driver = {
 	}
 };
 
-void  msm_hdcp_register(void)
+void __init msm_hdcp_register(void)
 {
 	platform_driver_register(&msm_hdcp_driver);
 }

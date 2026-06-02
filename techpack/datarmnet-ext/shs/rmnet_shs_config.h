@@ -22,6 +22,6 @@
 extern struct DATARMNETa6b20d7e8b DATARMNETecc0627c70;extern int 
 rmnet_is_real_dev_registered(const struct net_device*real_dev);extern 
 rx_handler_result_t rmnet_rx_handler(struct sk_buff**DATARMNET89946cec52);int 
- DATARMNET163e93649e(void);void __exit DATARMNETf3298dab6f(void);
+__init DATARMNET163e93649e(void);void __exit DATARMNETf3298dab6f(void);
 #endif 
 

@@ -1653,7 +1653,7 @@ static struct i2c_driver wsa881x_codec_driver = {
 	.remove = wsa881x_i2c_remove,
 };
 
-static int  wsa881x_codec_init(void)
+static int __init wsa881x_codec_init(void)
 {
 	int i = 0;
 
@@ -1661,7 +1661,7 @@ static int  wsa881x_codec_init(void)
 		wsa_pdata[i].status = WSA881X_STATUS_PROBING;
 	return i2c_add_driver(&wsa881x_codec_driver);
 }
-techpack_init(wsa881x_codec_init);
+module_init(wsa881x_codec_init);
 
 static void __exit wsa881x_codec_exit(void)
 {

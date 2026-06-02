@@ -313,11 +313,11 @@ static struct platform_driver smmu_proxy_driver = {
 	},
 };
 
-int  init_smmu_proxy_driver(void)
+int __init init_smmu_proxy_driver(void)
 {
 	return platform_driver_register(&smmu_proxy_driver);
 }
-techpack_init(init_smmu_proxy_driver);
+module_init(init_smmu_proxy_driver);
 
 MODULE_IMPORT_NS(DMA_BUF);
 MODULE_LICENSE("GPL v2");

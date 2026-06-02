@@ -431,7 +431,7 @@ void kgsl_events_exit(void)
 /**
  * kgsl_events_init() - Create the event kmem cache on module start
  */
-void  kgsl_events_init(void)
+void __init kgsl_events_init(void)
 {
 	events_cache = KMEM_CACHE(kgsl_event, 0);
 }

@@ -2894,5 +2894,5 @@ static void qcedev_exit(void)
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("QTI DEV Crypto driver");
 MODULE_IMPORT_NS(DMA_BUF);
-techpack_init(qcedev_init);
+module_init(qcedev_init);
 module_exit(qcedev_exit);

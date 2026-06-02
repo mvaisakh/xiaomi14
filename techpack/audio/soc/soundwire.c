@@ -1123,7 +1123,7 @@ static void __exit soundwire_exit(void)
 	bus_unregister(&soundwire_type);
 }
 
-static int  soundwire_init(void)
+static int __init soundwire_init(void)
 {
 	int retval;
 
@@ -1136,7 +1136,7 @@ static int  soundwire_init(void)
 
 	return retval;
 }
-techpack_init(soundwire_init);
+module_init(soundwire_init);
 module_exit(soundwire_exit);
 
 

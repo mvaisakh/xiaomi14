@@ -91,11 +91,11 @@ DATARMNETcb2b3ae8e4)goto DATARMNETaabe3a05f8;pr_info(
 ,__func__,DATARMNET00dcb79bc4->name);DATARMNET345f805b34();break;}
 DATARMNETaabe3a05f8:return NOTIFY_DONE;}static struct notifier_block 
 DATARMNETcae9c64c41={.notifier_call=DATARMNET7dec24813e,.priority=
-(0xd26+209-0xdf6),};static int  DATARMNETb1c42acd9c(void){pr_info(
+(0xd26+209-0xdf6),};static int __init DATARMNETb1c42acd9c(void){pr_info(
 "\x25\x73\x28\x29\x3a\x20\x72\x6d\x6e\x65\x74\x5f\x6f\x66\x66\x6c\x6f\x61\x64\x20\x69\x6e\x69\x74\x69\x61\x6c\x69\x7a\x69\x6e\x67" "\n"
 ,__func__);return register_netdevice_notifier(&DATARMNETcae9c64c41);}static void
  __exit DATARMNET0f6d85e415(void){pr_info(
 "\x25\x73\x28\x29\x3a\x20\x72\x6d\x6e\x65\x74\x5f\x6f\x66\x66\x6c\x6f\x61\x64\x20\x65\x78\x69\x74\x69\x6e\x67" "\n"
 ,__func__);unregister_netdevice_notifier(&DATARMNETcae9c64c41);}struct 
 DATARMNET70f3b87b5d*DATARMNETc2a630b113(void){return DATARMNETe05748b000;}
-techpack_init(DATARMNETb1c42acd9c);module_exit(DATARMNET0f6d85e415);
+module_init(DATARMNETb1c42acd9c);module_exit(DATARMNET0f6d85e415);

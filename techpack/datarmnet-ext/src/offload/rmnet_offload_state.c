@@ -203,7 +203,7 @@ static struct notifier_block rmnet_offload_state_notifier_block = {
 	.priority = 1,
 };
 
-static int  rmnet_offload_init(void)
+static int __init rmnet_offload_init(void)
 {
 	pr_info("%s(): rmnet_offload initializing\n", __func__);
 	return register_netdevice_notifier(&rmnet_offload_state_notifier_block);
@@ -221,5 +221,5 @@ struct rmnet_offload_state *rmnet_offload_state_get(void)
 	return rmnet_offload;
 }
 
-techpack_init(rmnet_offload_init);
+module_init(rmnet_offload_init);
 module_exit(rmnet_offload_exit);

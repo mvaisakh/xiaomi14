@@ -12777,7 +12777,7 @@ uint ipa3_get_emulation_type(void)
 	return emulation_type;
 }
 
-static int  ipa_module_init(void)
+static int __init ipa_module_init(void)
 {
 	pr_debug("IPA module init\n");
 

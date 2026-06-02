@@ -709,11 +709,11 @@ static struct platform_driver adsp_notify_driver = {
 	.remove = audio_notify_remove,
 };
 
-static int  audio_notifier_init(void)
+static int __init audio_notifier_init(void)
 {
 	return platform_driver_register(&adsp_notify_driver);
 }
-techpack_init(audio_notifier_init);
+module_init(audio_notifier_init);
 
 static void __exit audio_notifier_exit(void)
 {

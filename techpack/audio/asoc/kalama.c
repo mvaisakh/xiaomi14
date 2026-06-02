@@ -2109,12 +2109,12 @@ static struct platform_driver kalama_asoc_machine_driver = {
 	.remove = msm_asoc_machine_remove,
 };
 
-static int  msm_asoc_machine_init(void)
+static int __init msm_asoc_machine_init(void)
 {
 	snd_card_sysfs_init();
 	return platform_driver_register(&kalama_asoc_machine_driver);
 }
-techpack_init(msm_asoc_machine_init);
+module_init(msm_asoc_machine_init);
 
 static void __exit msm_asoc_machine_exit(void)
 {

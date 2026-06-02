@@ -7921,7 +7921,7 @@ static bool wlfw_is_valid_dt_node_found(void)
 	return false;
 }
 
-static int  wlfw_init(void)
+static int __init wlfw_init(void)
 {
 	if (!wlfw_is_valid_dt_node_found())
 		return -ENODEV;
@@ -7929,6 +7929,6 @@ static int  wlfw_init(void)
 	return 0;
 }
 
-techpack_init(wlfw_init);
+module_init(wlfw_init);
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("WLAN FW QMI service");

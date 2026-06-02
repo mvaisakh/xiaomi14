@@ -997,7 +997,7 @@ struct platform_driver msm_vidc_driver = {
 	},
 };
 
-static int  msm_vidc_init(void)
+static int __init msm_vidc_init(void)
 {
 	int rc = 0;
 
@@ -1021,7 +1021,7 @@ static void __exit msm_vidc_exit(void)
 	d_vpr_h("%s(): succssful\n", __func__);
 }
 
-techpack_init(msm_vidc_init);
+module_init(msm_vidc_init);
 module_exit(msm_vidc_exit);
 
 MODULE_SOFTDEP("pre: subsys-pil-tz msm-mmrm");

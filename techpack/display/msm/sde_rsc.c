@@ -1951,7 +1951,7 @@ static struct platform_driver sde_rsc_rpmh_driver = {
 	},
 };
 
-void  sde_rsc_register(void)
+void __init sde_rsc_register(void)
 {
 	platform_driver_register(&sde_rsc_platform_driver);
 }
@@ -1961,7 +1961,7 @@ void __exit sde_rsc_unregister(void)
 	platform_driver_unregister(&sde_rsc_platform_driver);
 }
 
-void  sde_rsc_rpmh_register(void)
+void __init sde_rsc_rpmh_register(void)
 {
 	platform_driver_register(&sde_rsc_rpmh_driver);
 }

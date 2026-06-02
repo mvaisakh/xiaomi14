@@ -235,7 +235,7 @@ static bool cld80211_is_valid_dt_node_found(void)
 	return false;
 }
 
-static int  cld80211_init(void)
+static int __init cld80211_init(void)
 {
 	if (!cld80211_is_valid_dt_node_found())
 		return -ENODEV;
@@ -248,7 +248,7 @@ static void __exit cld80211_exit(void)
 	__cld80211_exit();
 }
 
-techpack_init(cld80211_init);
+module_init(cld80211_init);
 module_exit(cld80211_exit);
 
 MODULE_LICENSE("GPL v2");

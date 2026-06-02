@@ -745,7 +745,7 @@ static struct platform_driver audio_pkt_core_platform_driver = {
 };
 
 
-static int  audio_pkt_init(void)
+static int __init audio_pkt_init(void)
 {
 	return platform_driver_register(&audio_pkt_core_platform_driver);
 }
@@ -754,7 +754,7 @@ static void __exit audio_pkt_exit(void)
 {
 	platform_driver_unregister(&audio_pkt_core_platform_driver);
 }
-techpack_init(audio_pkt_init);
+module_init(audio_pkt_init);
 module_exit(audio_pkt_exit);
 
 MODULE_DESCRIPTION("MSM Audio Packet Driver");

@@ -2357,7 +2357,7 @@ struct video_device rtc6226_viddev_template = {
 /*
  * rtc6226_i2c_init - module init
  */
-static  int rtc6226_init(void)
+static __init int rtc6226_init(void)
 {
 	FMDBG(DRIVER_DESC ", Version " DRIVER_VERSION "\n");
 	return rtc6226_i2c_init();
@@ -2371,5 +2371,5 @@ static void __exit rtc6226_exit(void)
 	i2c_del_driver(&rtc6226_i2c_driver);
 }
 
-techpack_init(rtc6226_init);
+module_init(rtc6226_init);
 module_exit(rtc6226_exit);

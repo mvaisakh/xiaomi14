@@ -599,7 +599,7 @@ static struct platform_driver msm_smmu_driver = {
 	},
 };
 
-int  msm_smmu_driver_init(void)
+int __init msm_smmu_driver_init(void)
 {
 	int ret;
 

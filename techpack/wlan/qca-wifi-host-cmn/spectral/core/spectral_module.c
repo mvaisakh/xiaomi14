@@ -54,7 +54,7 @@ wlan_spectral_deinit_spectral_directory(void)
  */
 
 #ifndef QCA_SINGLE_WIFI_3_0
-static int  spectral_init_module(void)
+static int __init spectral_init_module(void)
 #else
 int spectral_init_module(void)
 #endif
@@ -87,7 +87,7 @@ void spectral_exit_module(void)
 }
 
 #ifndef QCA_SINGLE_WIFI_3_0
-techpack_init(spectral_init_module);
+module_init(spectral_init_module);
 module_exit(spectral_exit_module);
 #else
 qdf_export_symbol(spectral_init_module);

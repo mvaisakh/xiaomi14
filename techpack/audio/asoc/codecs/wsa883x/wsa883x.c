@@ -2097,7 +2097,7 @@ static struct swr_driver wsa883x_swr_driver = {
 	.id_table = wsa883x_swr_id,
 };
 
-static int  wsa883x_swr_init(void)
+static int __init wsa883x_swr_init(void)
 {
 	return swr_driver_register(&wsa883x_swr_driver);
 }
@@ -2107,7 +2107,7 @@ static void __exit wsa883x_swr_exit(void)
 	swr_driver_unregister(&wsa883x_swr_driver);
 }
 
-techpack_init(wsa883x_swr_init);
+module_init(wsa883x_swr_init);
 module_exit(wsa883x_swr_exit);
 
 MODULE_DESCRIPTION("WSA883x codec driver");

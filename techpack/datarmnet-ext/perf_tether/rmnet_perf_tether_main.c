@@ -234,10 +234,10 @@ DATARMNETd0ef85194f)goto DATARMNETaabe3a05f8;pr_info(
 ,__func__,DATARMNET00dcb79bc4->name);DATARMNET3ece352201();break;}
 DATARMNETaabe3a05f8:return NOTIFY_DONE;}static struct notifier_block 
 DATARMNETd9d8382fca={.notifier_call=DATARMNET6e31e62d2e,.priority=
-(0xd18+223-0xdf4),};static int  DATARMNET5e4be08a32(void){pr_info(
+(0xd18+223-0xdf4),};static int __init DATARMNET5e4be08a32(void){pr_info(
 "\x25\x73\x28\x29\x3a\x20\x4c\x6f\x61\x64\x69\x6e\x67" "\n",__func__);return 
 register_netdevice_notifier(&DATARMNETd9d8382fca);}static void __exit 
 DATARMNET50e3d76d94(void){pr_info(
 "\x25\x73\x28\x29\x3a\x20\x65\x78\x69\x74\x69\x6e\x67" "\n",__func__);
-unregister_netdevice_notifier(&DATARMNETd9d8382fca);}techpack_init(
+unregister_netdevice_notifier(&DATARMNETd9d8382fca);}module_init(
 DATARMNET5e4be08a32);module_exit(DATARMNET50e3d76d94);

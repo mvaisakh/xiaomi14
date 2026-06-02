@@ -376,7 +376,7 @@ static struct platform_driver mmrm_vm_fe_test_driver = {
 		},
 };
 
-static int  mmrm_vm_fe_test_init(void)
+static int __init mmrm_vm_fe_test_init(void)
 {
 	int rc = 0;
 	rc = platform_driver_register(&mmrm_vm_fe_test_driver);
@@ -385,7 +385,7 @@ static int  mmrm_vm_fe_test_init(void)
 	}
 	return rc;
 }
-techpack_init(mmrm_vm_fe_test_init);
+module_init(mmrm_vm_fe_test_init);
 
 static void __exit mmrm_vm_fe_test_exit(void)
 {

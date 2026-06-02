@@ -920,7 +920,7 @@ static struct swr_driver swr_dmic_driver = {
 	.id_table = swr_dmic_id,
 };
 
-static int  swr_dmic_init(void)
+static int __init swr_dmic_init(void)
 {
 	return swr_driver_register(&swr_dmic_driver);
 }
@@ -930,7 +930,7 @@ static void __exit swr_dmic_exit(void)
 	swr_driver_unregister(&swr_dmic_driver);
 }
 
-techpack_init(swr_dmic_init);
+module_init(swr_dmic_init);
 module_exit(swr_dmic_exit);
 
 MODULE_DESCRIPTION("SWR DMIC driver");

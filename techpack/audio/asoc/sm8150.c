@@ -7251,7 +7251,7 @@ static struct platform_driver sm8150_asoc_machine_driver = {
 	.remove = msm_asoc_machine_remove,
 };
 
-int  sm8150_init(void)
+int __init sm8150_init(void)
 {
 	pr_debug("%s\n", __func__);
 	return platform_driver_register(&sm8150_asoc_machine_driver);

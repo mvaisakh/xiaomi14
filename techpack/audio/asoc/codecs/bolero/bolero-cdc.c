@@ -1602,13 +1602,13 @@ static void bolero_drv_exit(void)
 	platform_driver_unregister(&bolero_drv);
 }
 
-static int  bolero_init(void)
+static int __init bolero_init(void)
 {
 	bolero_drv_init();
 	bolero_clk_rsc_mgr_init();
 	return 0;
 }
-techpack_init(bolero_init);
+module_init(bolero_init);
 
 static void __exit bolero_exit(void)
 {

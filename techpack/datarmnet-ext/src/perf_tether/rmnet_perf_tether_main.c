@@ -548,7 +548,7 @@ static struct notifier_block rmnet_perf_tether_state_notifier_block = {
 	.priority = 3,
 };
 
-static int  rmnet_perf_tether_init(void)
+static int __init rmnet_perf_tether_init(void)
 {
 	pr_info("%s(): Loading\n", __func__);
 	return register_netdevice_notifier(&rmnet_perf_tether_state_notifier_block);
@@ -560,5 +560,5 @@ static void __exit rmnet_perf_tether_exit(void)
 	unregister_netdevice_notifier(&rmnet_perf_tether_state_notifier_block);
 }
 
-techpack_init(rmnet_perf_tether_init);
+module_init(rmnet_perf_tether_init);
 module_exit(rmnet_perf_tether_exit);

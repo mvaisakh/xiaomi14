@@ -5997,7 +5997,7 @@ static bool cnss_is_valid_dt_node_found(void)
 	return false;
 }
 
-static int  cnss_initialize(void)
+static int __init cnss_initialize(void)
 {
 	int ret = 0;
 
@@ -6027,7 +6027,7 @@ static void __exit cnss_exit(void)
 	cnss_debug_deinit();
 }
 
-techpack_init(cnss_initialize);
+module_init(cnss_initialize);
 module_exit(cnss_exit);
 
 MODULE_LICENSE("GPL v2");

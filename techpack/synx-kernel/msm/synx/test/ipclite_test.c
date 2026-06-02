@@ -1398,7 +1398,7 @@ static int ipclite_test_sysfs_node_setup(void)
 	return 0;
 }
 
-static int  ipclite_test_init(void)
+static int __init ipclite_test_init(void)
 {
 	int ret = 0;
 
@@ -1449,7 +1449,7 @@ static void __exit ipclite_test_exit(void)
 	data = NULL;
 }
 
-techpack_init(ipclite_test_init);
+module_init(ipclite_test_init);
 module_exit(ipclite_test_exit);
 
 MODULE_LICENSE("GPL v2");
