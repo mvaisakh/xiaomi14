@@ -914,4 +914,16 @@ static inline int module_kallsyms_on_each_symbol(int (*fn)(void *, const char *,
 }
 #endif  /* CONFIG_MODULES && CONFIG_KALLSYMS */
 
+#include <linux/workqueue.h>
+#include <linux/jiffies.h>
+
+#define techpack_init(init_fn) \
+	static void init_fn##_lazy_work(struct work_struct *work) { init_fn(); } \
+	static DECLARE_DELAYED_WORK(init_fn##_dwork, init_fn##_lazy_work); \
+	static int init_fn##_lazy_register(void) { \
+		schedule_delayed_work(&init_fn##_dwork, msecs_to_jiffies(1000)); \
+		return 0; \
+	} \
+	late_initcall(init_fn##_lazy_register)
+
 #endif /* _LINUX_MODULE_H */
