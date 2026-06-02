@@ -66,5 +66,5 @@ msm-eva-objs := eva/cvp.o \
 	eva/vm/cvp_vm_main.o \
 	eva/vm/cvp_vm_msgq.o \
 	eva/vm/cvp_vm_resource.o
-obj-m += msm-eva.o
+obj-y += msm-eva.o
 
